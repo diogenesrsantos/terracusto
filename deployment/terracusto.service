@@ -1,0 +1,23 @@
+[Unit]
+Description=TerraCusto PWA
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=terracusto
+Group=terracusto
+WorkingDirectory=/var/www/terracusto
+EnvironmentFile=/etc/terracusto.env
+Environment=NODE_ENV=production
+Environment=PORT=3120
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/www/terracusto
+
+[Install]
+WantedBy=multi-user.target

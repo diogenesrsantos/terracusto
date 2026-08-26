@@ -1,0 +1,395 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PersonType {
+  EMPLOYEE
+  CONTRACTOR
+  OTHER
+}
+
+enum AssetKind {
+  MACHINE
+  VEHICLE
+  TOOL
+  OTHER
+}
+
+enum EntryStatus {
+  POSTED
+  VOID
+}
+
+enum AccountNature {
+  DEBIT
+  CREDIT
+}
+
+enum StockMovementKind {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+enum MaintenanceKind {
+  PREVENTIVE
+  CORRECTIVE
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_PART
+  DONE
+  CANCELED
+}
+
+enum PeriodStatus {
+  OPEN
+  CLOSED
+}
+
+model Person {
+  id          String             @id @default(cuid())
+  name        String
+  cpf         String?            @unique
+  phone       String?
+  email       String?
+  roleTitle   String?
+  type        PersonType         @default(EMPLOYEE)
+  active      Boolean            @default(true)
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  user        User?
+  activities  PersonActivity[]
+  entries     AccountingEntry[]  @relation("EntryPerson")
+  dispenses   FuelDispense[]
+  maintenance MaintenanceOrder[] @relation("Mechanic")
+}
+
+model Activity {
+  id     String           @id @default(cuid())
+  name   String           @unique
+  people PersonActivity[]
+}
+
+model PersonActivity {
+  personId   String
+  activityId String
+  person     Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@id([personId, activityId])
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  active       Boolean    @default(true)
+  personId     String?    @unique
+  person       Person?    @relation(fields: [personId], references: [id])
+  roles        UserRole[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  name        String
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id    String           @id @default(cuid())
+  code  String           @unique
+  name  String
+  roles RolePermission[]
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model Work {
+  id          String             @id @default(cuid())
+  code        String             @unique
+  name        String
+  client      String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  active      Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  entries     AccountingEntry[]
+  closings    MonthlyClosing[]
+  periods     AccountingPeriod[]
+  purchases   FuelPurchase[]
+  dispenses   FuelDispense[]
+  stockMoves  StockMovement[]
+  maintenance MaintenanceOrder[]
+}
+
+model AccountingPeriod {
+  id         String       @id @default(cuid())
+  workId     String
+  competence DateTime
+  status     PeriodStatus @default(OPEN)
+  closedById String?
+  closedAt   DateTime?
+  work       Work         @relation(fields: [workId], references: [id])
+
+  @@unique([workId, competence])
+}
+
+model Asset {
+  id            String             @id @default(cuid())
+  kind          AssetKind
+  identifier    String             @unique
+  description   String
+  brand         String?
+  model         String?
+  fuelTypeId    String?
+  expectedUsage Decimal?           @db.Decimal(12, 3)
+  active        Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  fuelType      FuelType?          @relation(fields: [fuelTypeId], references: [id])
+  entries       AccountingEntry[]
+  dispenses     FuelDispense[]
+  maintenance   MaintenanceOrder[]
+}
+
+model Account {
+  id       String           @id @default(cuid())
+  code     String           @unique
+  name     String
+  nature   AccountNature
+  analytic Boolean          @default(true)
+  active   Boolean          @default(true)
+  parentId String?
+  parent   Account?         @relation("AccountTree", fields: [parentId], references: [id])
+  children Account[]        @relation("AccountTree")
+  lines    AccountingLine[]
+  closings MonthlyClosing[]
+}
+
+model AccountingEntry {
+  id           String           @id @default(cuid())
+  date         DateTime
+  competence   DateTime
+  history      String
+  document     String?
+  status       EntryStatus      @default(POSTED)
+  workId       String
+  personId     String?
+  assetId      String?
+  startAt      DateTime?
+  endAt        DateTime?
+  hours        Decimal?         @db.Decimal(10, 2)
+  createdById  String
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  work         Work             @relation(fields: [workId], references: [id])
+  person       Person?          @relation("EntryPerson", fields: [personId], references: [id])
+  asset        Asset?           @relation(fields: [assetId], references: [id])
+  lines        AccountingLine[]
+  fuelPurchase FuelPurchase?
+
+  @@index([workId, competence, status])
+  @@index([date])
+}
+
+model AccountingLine {
+  id        String          @id @default(cuid())
+  entryId   String
+  accountId String
+  debit     Decimal         @default(0) @db.Decimal(14, 2)
+  credit    Decimal         @default(0) @db.Decimal(14, 2)
+  entry     AccountingEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account   Account         @relation(fields: [accountId], references: [id])
+
+  @@index([accountId])
+}
+
+model MonthlyClosing {
+  id             String   @id @default(cuid())
+  workId         String
+  accountId      String
+  competence     DateTime
+  openingBalance Decimal  @db.Decimal(14, 2)
+  totalDebit     Decimal  @db.Decimal(14, 2)
+  totalCredit    Decimal  @db.Decimal(14, 2)
+  closingBalance Decimal  @db.Decimal(14, 2)
+  closedById     String
+  closedAt       DateTime @default(now())
+  work           Work     @relation(fields: [workId], references: [id])
+  account        Account  @relation(fields: [accountId], references: [id])
+
+  @@unique([workId, accountId, competence])
+  @@index([workId, competence])
+}
+
+model Supplier {
+  id            String         @id @default(cuid())
+  name          String
+  document      String?        @unique
+  isFuelStation Boolean        @default(false)
+  active        Boolean        @default(true)
+  purchases     FuelPurchase[]
+}
+
+model FuelType {
+  id             String         @id @default(cuid())
+  name           String         @unique
+  referencePrice Decimal?       @db.Decimal(12, 4)
+  assets         Asset[]
+  purchases      FuelPurchase[]
+  dispenses      FuelDispense[]
+}
+
+model FuelPurchase {
+  id          String           @id @default(cuid())
+  date        DateTime
+  coupon      String
+  liters      Decimal          @db.Decimal(14, 3)
+  unitPrice   Decimal          @db.Decimal(12, 4)
+  total       Decimal          @db.Decimal(14, 2)
+  supplierId  String
+  fuelTypeId  String
+  workId      String
+  entryId     String?          @unique
+  createdById String
+  createdAt   DateTime         @default(now())
+  supplier    Supplier         @relation(fields: [supplierId], references: [id])
+  fuelType    FuelType         @relation(fields: [fuelTypeId], references: [id])
+  work        Work             @relation(fields: [workId], references: [id])
+  entry       AccountingEntry? @relation(fields: [entryId], references: [id])
+
+  @@index([date, supplierId])
+}
+
+model FuelDispense {
+  id          String   @id @default(cuid())
+  date        DateTime
+  liters      Decimal  @db.Decimal(14, 3)
+  meter       Decimal? @db.Decimal(14, 2)
+  notes       String?
+  fuelTypeId  String
+  assetId     String
+  workId      String
+  personId    String?
+  createdById String
+  createdAt   DateTime @default(now())
+  fuelType    FuelType @relation(fields: [fuelTypeId], references: [id])
+  asset       Asset    @relation(fields: [assetId], references: [id])
+  work        Work     @relation(fields: [workId], references: [id])
+  person      Person?  @relation(fields: [personId], references: [id])
+
+  @@index([date, assetId])
+}
+
+model Product {
+  id               String            @id @default(cuid())
+  code             String            @unique
+  name             String
+  unit             String
+  minimum          Decimal           @default(0) @db.Decimal(14, 3)
+  active           Boolean           @default(true)
+  movements        StockMovement[]
+  maintenanceParts MaintenancePart[]
+}
+
+model StockMovement {
+  id          String            @id @default(cuid())
+  date        DateTime
+  kind        StockMovementKind
+  quantity    Decimal           @db.Decimal(14, 3)
+  unitCost    Decimal?          @db.Decimal(14, 4)
+  document    String?
+  requester   String?
+  history     String
+  productId   String
+  workId      String?
+  createdById String
+  createdAt   DateTime          @default(now())
+  product     Product           @relation(fields: [productId], references: [id])
+  work        Work?             @relation(fields: [workId], references: [id])
+
+  @@index([productId, date])
+}
+
+model MaintenanceOrder {
+  id           String            @id @default(cuid())
+  number       Int               @unique @default(autoincrement())
+  kind         MaintenanceKind
+  status       MaintenanceStatus @default(OPEN)
+  openedAt     DateTime          @default(now())
+  finishedAt   DateTime?
+  meter        Decimal?          @db.Decimal(14, 2)
+  complaint    String
+  diagnosis    String?
+  service      String?
+  externalCost Decimal           @default(0) @db.Decimal(14, 2)
+  assetId      String
+  workId       String?
+  mechanicId   String?
+  createdById  String
+  asset        Asset             @relation(fields: [assetId], references: [id])
+  work         Work?             @relation(fields: [workId], references: [id])
+  mechanic     Person?           @relation("Mechanic", fields: [mechanicId], references: [id])
+  parts        MaintenancePart[]
+
+  @@index([assetId, status])
+}
+
+model MaintenancePart {
+  id        String           @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Decimal          @db.Decimal(14, 3)
+  unitCost  Decimal          @db.Decimal(14, 4)
+  order     MaintenanceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product          @relation(fields: [productId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  reason    String?
+  data      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}

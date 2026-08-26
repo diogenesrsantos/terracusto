@@ -1,0 +1,7 @@
+[Unit]
+Description=Backup PostgreSQL do TerraCusto
+After=postgresql.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/backup-terracusto
