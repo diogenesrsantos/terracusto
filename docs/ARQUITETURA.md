@@ -64,16 +64,23 @@ distinguem criação e atualização pelo identificador oculto e auditam ambas.
 `saveUser` troca perfil e dados do usuário em transação; uma senha vazia na
 alteração não modifica `passwordHash`.
 
+`Company` é o cadastro mestre usado pelas relações de obras e compras de
+combustível. `Work.companyId = null` representa uma obra própria; uma empresa
+com `isFuelSupplier = true` fica disponível como fornecedora em Combustível. A
+migration `20260827141000_unify_companies` renomeia a antiga tabela `Supplier`,
+preserva seus identificadores e compras, cria empresas para os textos legados
+de `Work.client` e substitui o texto pela chave estrangeira.
+
 ## Domínios de dados
 
 O schema possui 27 modelos, agrupados assim:
 
 - Identidade: `Person`, `JobFunction`, `Activity`, `PersonActivity`, `User`, `Role`,
   `Permission`, `UserRole`, `RolePermission` e `AuditLog`.
-- Operação: `Work`, `EquipmentType` e `Asset`.
+- Cadastros e operação: `Company`, `Work`, `EquipmentType` e `Asset`.
 - Contabilidade: `Account`, `AccountingEntry`, `AccountingLine`,
   `AccountingPeriod`, `MonthlyClosing` e `EntryType`.
-- Combustível: `Supplier`, `FuelType`, `FuelPurchase` e `FuelDispense`.
+- Combustível: `FuelType`, `FuelPurchase` e `FuelDispense`.
 - Estoque: `Product` e `StockMovement`.
 - Manutenção: `MaintenanceOrder` e `MaintenancePart`.
 

@@ -86,6 +86,19 @@ export async function savePerson(form: FormData) {
   revalidatePath("/pessoas");
 }
 
+export async function saveCompany(form: FormData) {
+  const user = await requirePermission("companies.manage");
+  const id = optional(form, "id");
+  const data = {
+    name: text(form, "name"), document: optional(form, "document"),
+    isFuelSupplier: form.get("isFuelSupplier") === "true",
+    active: id ? text(form, "active") === "true" : true,
+  };
+  const row = id ? await db.company.update({ where: { id }, data }) : await db.company.create({ data });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "Company", row.id);
+  ["/empresas", "/obras", "/combustivel"].forEach((path) => revalidatePath(path));
+}
+
 export async function saveUser(form: FormData) {
   const user = await requirePermission("users.manage");
   const id = optional(form, "id");
@@ -123,7 +136,7 @@ export async function saveWork(form: FormData) {
   const user = await requirePermission("works.manage");
   const id = optional(form, "id");
   const data = {
-    name: text(form, "name"), client: text(form, "client"),
+    name: text(form, "name"), companyId: optional(form, "companyId"),
     description: optional(form, "description"), startDate: text(form, "startDate") ? when(form, "startDate") : null,
   };
   const row = id
@@ -372,12 +385,6 @@ export async function reopenPeriod(form: FormData) {
   ]);
   await audit(user.userId, "REOPEN", "AccountingPeriod", `${workId}:${competence.toISOString()}`, undefined, reason);
   revalidatePath("/fechamentos");
-}
-
-export async function createSupplier(form: FormData) {
-  const user = await requirePermission("fuel.manage");
-  const row = await db.supplier.create({ data: { name: text(form, "name"), document: optional(form, "document"), isFuelStation: true } });
-  await audit(user.userId, "CREATE", "Supplier", row.id); revalidatePath("/combustivel");
 }
 
 export async function saveFuelType(form: FormData) {

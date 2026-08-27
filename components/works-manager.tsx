@@ -9,14 +9,17 @@ export type WorkListItem = {
   id: string;
   code: number;
   name: string;
-  client: string;
+  companyId: string | null;
+  companyName: string | null;
   description: string | null;
   startDate: string;
   startDateLabel: string;
   active: boolean;
 };
 
-export function WorksManager({ works, page, totalPages, totalWorks }: { works: WorkListItem[]; page: number; totalPages: number; totalWorks: number }) {
+type CompanyOption = { id: string; name: string; active: boolean };
+
+export function WorksManager({ works, companies, page, totalPages, totalWorks }: { works: WorkListItem[]; companies: CompanyOption[]; page: number; totalPages: number; totalWorks: number }) {
   const [selected, setSelected] = useState<WorkListItem | null>(null);
 
   async function submitWork(form: FormData) {
@@ -30,7 +33,7 @@ export function WorksManager({ works, page, totalPages, totalWorks }: { works: W
         <input type="hidden" name="id" value={selected?.id || ""} />
         <label className="field span-2">Nome da obra<input name="name" defaultValue={selected?.name || ""} required /></label>
         <label className="field">Início<input name="startDate" type="date" defaultValue={selected?.startDate || ""} /></label>
-        <label className="field span-2">Cliente<input name="client" defaultValue={selected?.client || ""} required /></label>
+        <label className="field span-2">Empresa/cliente<select name="companyId" defaultValue={selected?.companyId || ""}><option value="">Obra própria</option>{companies.map((company) => <option key={company.id} value={company.id} disabled={!company.active && company.id !== selected?.companyId}>{company.name}{company.active ? "" : " — inativa"}</option>)}</select></label>
         <label className="field">Descrição<input name="description" defaultValue={selected?.description || ""} /></label>
         <div className="form-actions">
           {selected && <button className="btn secondary" type="button" onClick={() => setSelected(null)}>Cancelar alteração</button>}
@@ -42,7 +45,7 @@ export function WorksManager({ works, page, totalPages, totalWorks }: { works: W
     <section className="card mt"><div className="list-head"><h2>Obras cadastradas</h2><span className="muted">{totalWorks} {totalWorks === 1 ? "obra" : "obras"}</span></div>
       {works.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Código</th><th>Obra</th><th>Cliente</th><th>Início</th><th>Situação</th></tr></thead><tbody>
         {works.map((work) => <tr key={work.id} className={`selectable-row${selected?.id === work.id ? " selected" : ""}`} onClick={() => setSelected(work)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(work); } }} role="button" tabIndex={0} aria-selected={selected?.id === work.id}>
-          <td><strong>{work.code}</strong></td><td><strong>{work.name}</strong></td><td>{work.client}</td><td>{work.startDateLabel}</td><td><span className={`badge${work.active ? "" : " warn"}`}>{work.active ? "Ativa" : "Encerrada"}</span></td>
+          <td><strong>{work.code}</strong></td><td><strong>{work.name}</strong></td><td>{work.companyName || "Obra própria"}</td><td>{work.startDateLabel}</td><td><span className={`badge${work.active ? "" : " warn"}`}>{work.active ? "Ativa" : "Encerrada"}</span></td>
         </tr>)}
       </tbody></table></div>}
       {totalPages > 1 && <nav className="pagination" aria-label="Paginação de obras">

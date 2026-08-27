@@ -7,7 +7,8 @@ const directItems = [["dashboard.view", "/", "Visão geral"]] as const;
 const groups = [
   { label: "Cadastros", items: [
     ["people.manage", "/pessoas", "Pessoas"], ["users.manage", "/usuarios", "Usuários e acessos"],
-    ["works.manage", "/obras", "Obras"], ["assets.manage", "/equipamentos", "Equipamentos"],
+    ["companies.manage", "/empresas", "Empresas"], ["works.manage", "/obras", "Obras"],
+    ["assets.manage", "/equipamentos", "Equipamentos"],
   ] },
   { label: "Contabilidade", items: [
     ["accounting.manage", "/plano-contas", "Plano de contas"], ["accounting.manage", "/tipos-lancamento", "Tipos de lançamento"],

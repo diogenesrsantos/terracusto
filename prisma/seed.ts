@@ -8,6 +8,7 @@ const permissions = [
   ["people.manage", "Gerenciar pessoas"],
   ["users.manage", "Gerenciar usuários e acessos"],
   ["works.manage", "Gerenciar obras"],
+  ["companies.manage", "Gerenciar empresas"],
   ["assets.manage", "Gerenciar equipamentos"],
   ["accounting.manage", "Gerenciar plano de contas e lançamentos"],
   ["closing.close", "Fechar competências"],

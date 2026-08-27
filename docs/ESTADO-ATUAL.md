@@ -84,6 +84,20 @@ para `/login` com os cabeçalhos de segurança e o timer de backup permaneceu
 ativo. Não houve alteração de schema ou escrita automática de dados, portanto
 não foi necessário backup específico.
 
+Em 27/08/2026, clientes de obras e fornecedores de combustível foram unificados
+no novo cadastro `/empresas`, incluído no submenu Cadastros. Obras agora
+selecionam uma empresa por chave estrangeira ou usam a opção “Obra própria”;
+Combustível lista como fornecedores as empresas marcadas para essa finalidade.
+A migration `20260827141000_unify_companies` preservou fornecedores, compras e
+clientes já registrados e criou a permissão `companies.manage`.
+
+Implantação validada em 27/08/2026: backup pré-migration
+`terracusto-20260827-112049.dump`, 9 migrations aplicadas sem pendências, build
+remoto aprovado com 20 rotas, serviço ativo desde 11:24 -03 e health check com
+aplicação e banco `ok`. A conferência agregada encontrou 1 empresa, nenhuma obra
+sem vínculo empresarial e nenhuma compra de combustível perdida. O domínio
+público respondeu HTTP 307 para `/login` e o timer de backup permaneceu ativo.
+
 ## Código
 
 - Repositório local: `/home/diogenes/Desenvolvimento/Reflex/terracusto`

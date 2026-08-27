@@ -144,13 +144,14 @@ model Work {
   id          String             @id @default(cuid())
   code        Int                @unique @default(autoincrement())
   name        String
-  client      String
+  companyId   String?
   description String?
   startDate   DateTime?
   endDate     DateTime?
   active      Boolean            @default(true)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
+  company     Company?           @relation(fields: [companyId], references: [id])
   entries     AccountingEntry[]
   closings    MonthlyClosing[]
   periods     AccountingPeriod[]
@@ -158,6 +159,8 @@ model Work {
   dispenses   FuelDispense[]
   stockMoves  StockMovement[]
   maintenance MaintenanceOrder[]
+
+  @@index([companyId])
 }
 
 model AccountingPeriod {
@@ -293,13 +296,16 @@ model MonthlyClosing {
   @@index([workId, competence])
 }
 
-model Supplier {
-  id            String         @id @default(cuid())
-  name          String
-  document      String?        @unique
-  isFuelStation Boolean        @default(false)
-  active        Boolean        @default(true)
-  purchases     FuelPurchase[]
+model Company {
+  id             String         @id @default(cuid())
+  name           String
+  document       String?        @unique
+  isFuelSupplier Boolean        @default(false)
+  active         Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  works          Work[]
+  fuelPurchases  FuelPurchase[]
 }
 
 model FuelType {
@@ -325,7 +331,7 @@ model FuelPurchase {
   entryId     String?          @unique
   createdById String
   createdAt   DateTime         @default(now())
-  supplier    Supplier         @relation(fields: [supplierId], references: [id])
+  supplier    Company          @relation(fields: [supplierId], references: [id])
   fuelType    FuelType         @relation(fields: [fuelTypeId], references: [id])
   work        Work             @relation(fields: [workId], references: [id])
   entry       AccountingEntry? @relation(fields: [entryId], references: [id])

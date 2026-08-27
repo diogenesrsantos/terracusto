@@ -32,6 +32,7 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/` | Visão geral | `dashboard.view` | Quantidade de obras e equipamentos, débitos do mês, manutenções abertas e oito lançamentos recentes |
 | `/pessoas` | Pessoas | `people.manage` | Cadastro e edição de pessoas, catálogo de funções, atividades e vínculo pessoa/atividade |
 | `/usuarios` | Usuários | `users.manage` | Cadastro, edição e paginação de usuários, vínculo com pessoa, perfil e criação de perfis personalizados |
+| `/empresas` | Empresas | `companies.manage` | Cadastro, edição e paginação do catálogo compartilhado por obras e combustível |
 | `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de obras/centros de custo |
 | `/equipamentos` | Equipamentos | `assets.manage` | Cadastro de tipos e cadastro, edição e paginação de equipamentos/ativos |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
@@ -39,7 +40,7 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtro por obra e edição |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento de competências vencidas e balancete |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura mediante senha e justificativa |
-| `/combustivel` | Combustível | `fuel.manage` | Tipos de combustível, postos, compras, saldo do tanque e abastecimentos |
+| `/combustivel` | Combustível | `fuel.manage` | Tipos, fornecedores, compras, saldo do tanque e abastecimentos |
 | `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas, ajustes positivos, saldos e alerta de reposição |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens preventivas/corretivas |
 | `/perfil` | Minha senha | usuário autenticado | Alteração da própria senha |
@@ -50,7 +51,7 @@ O menu lateral só mostra módulos permitidos ao usuário. A autorização é
 repetida no servidor em todas as páginas protegidas e ações de escrita.
 
 A navegação é agrupada em submenus expansíveis: Cadastros reúne Pessoas,
-Usuários e acessos, Obras e Equipamentos; Contabilidade reúne Plano de contas,
+Usuários e acessos, Empresas, Obras e Equipamentos; Contabilidade reúne Plano de contas,
 Tipos de lançamento, Centro de custos e Fechamentos; Operacional reúne
 Combustível, Almoxarifado e Manutenção. Visão geral é um item direto. O grupo da rota atual abre
 automaticamente, o subitem recebe destaque e os gatilhos são acessíveis por
@@ -79,13 +80,17 @@ omitidos.
   selecionada carrega nome, e-mail, perfil e vínculo com pessoa para alteração.
   A nova senha é opcional e, quando vazia, preserva o hash existente.
 - O sistema inicializa os perfis Administrador e Escriturário. O Administrador
-  recebe todas as 11 permissões; o Escriturário não recebe `users.manage` nem
+  recebe todas as 12 permissões; o Escriturário não recebe `users.manage` nem
   `closing.reopen`.
 
 ### Obras e equipamentos
 
+- Empresa possui nome, CNPJ/CPF opcional e único, situação e indicação de que
+  atua como fornecedora de combustível. O mesmo registro pode ser selecionado
+  como cliente de obra e fornecedor.
 - Obra possui código inteiro único gerado por sequência/autoincremento, nome,
-  cliente, descrição e data inicial opcional.
+  empresa/cliente opcional, descrição e data inicial opcional. A ausência da
+  empresa representa “Obra própria”.
 - Uma competência aberta para o mês vigente é criada junto com cada obra.
 - Obra é o centro de custo obrigatório de lançamentos e operações de
   combustível; pode também ser vinculada a estoque e manutenção.
@@ -182,8 +187,8 @@ omitidos.
   situação. Podem ser criados, editados, ativados, desativados e excluídos.
 - Um tipo referenciado por equipamento, compra ou abastecimento é desativado em
   vez de excluído.
-- Postos são fornecedores marcados como posto de combustível.
-- Compra registra data, cupom/nota, posto, combustível, litros, preço unitário,
+- Fornecedores são empresas ativas marcadas como fornecedoras de combustível.
+- Compra registra data, cupom/nota, fornecedor, combustível, litros, preço unitário,
   obra e contas. O total é `litros × preço`, arredondado para duas casas.
 - Compra e lançamento contábil correspondente são criados na mesma transação.
   A compra respeita a competência operacional da obra e não pode usar
@@ -234,6 +239,7 @@ O schema possui 27 modelos:
 | Identidade | `UserRole` | Relação muitos-para-muitos usuário/perfil |
 | Identidade | `RolePermission` | Relação muitos-para-muitos perfil/permissão |
 | Identidade | `AuditLog` | Usuário, ação, entidade, identificador, motivo, JSON, IP e data |
+| Cadastro | `Company` | Empresa compartilhada por obras e fornecedores de combustível |
 | Operação | `Work` | Obra/centro de custo e seus períodos, lançamentos e operações |
 | Operação | `EquipmentType` | Catálogo de tipos de equipamento |
 | Operação | `Asset` | Máquina, veículo, ferramenta ou outro ativo |
@@ -243,7 +249,6 @@ O schema possui 27 modelos:
 | Contabilidade | `AccountingLine` | Linha de débito ou crédito vinculada a conta e lançamento |
 | Contabilidade | `AccountingPeriod` | Estado aberto/fechado da competência por obra |
 | Contabilidade | `MonthlyClosing` | Consolidação mensal por obra e conta |
-| Combustível | `Supplier` | Fornecedor; postos usam `isFuelStation=true` |
 | Combustível | `FuelType` | Catálogo, preço de referência e situação |
 | Combustível | `FuelPurchase` | Entrada no tanque e vínculo individual com lançamento contábil |
 | Combustível | `FuelDispense` | Saída do tanque para equipamento e obra |
@@ -264,12 +269,13 @@ Valores monetários e quantitativos usam `Decimal`; identificadores internos usa
 | Sessão | `login`, `logout` e `changePassword` |
 | `people.manage` | `createActivity`, `createJobFunction`, `assignActivity` e `savePerson` |
 | `users.manage` | `saveUser` e `createRole` |
+| `companies.manage` | `saveCompany` |
 | `works.manage` | `saveWork`, incluindo a competência inicial somente na criação |
 | `assets.manage` | `createEquipmentType` e `saveAsset` |
 | `accounting.manage` | `saveAccount`, `saveEntryType`, `deleteEntryType` e `saveEntry` |
 | `closing.close` | `closePeriod` |
 | `closing.reopen` | `reopenPeriod` |
-| `fuel.manage` | `createSupplier`, `saveFuelType`, `deleteFuelType`, `createFuelPurchase` e `createFuelDispense` |
+| `fuel.manage` | `saveFuelType`, `deleteFuelType`, `createFuelPurchase` e `createFuelDispense` |
 | `stock.manage` | `createProduct` e `createStockMovement` |
 | `maintenance.manage` | `createMaintenance` e `finishMaintenance` |
 
@@ -281,7 +287,7 @@ As ações relevantes registram `CREATE`, `UPDATE`, `DELETE`, `DEACTIVATE`,
 
 O seed cria/atualiza:
 
-- 11 permissões e os perfis `ADMIN` e `CLERK`;
+- 12 permissões e os perfis `ADMIN` e `CLERK`;
 - administrador indicado por `ADMIN_EMAIL`, sem redefinir a senha de usuário já
   existente;
 - funções Administrativo, Auxiliar, Mecânico, Motorista e Operador de máquinas;
@@ -306,9 +312,11 @@ O seed cria/atualiza:
 | `20260826223000_backfill_accounting_periods` | Cria períodos faltantes para lançamentos legados |
 | `20260826233000_add_entry_types` | Reestrutura contas de serviços/reembolsos e cria tipos de lançamento |
 | `20260827001000_sync_service_entry_types` | Cria tipos para contas analíticas já existentes sob Serviços/Reembolsáveis |
+| `20260827141000_unify_companies` | Unifica clientes e fornecedores em `Company`, vincula obras e cria a permissão de empresas |
 
-Produção possui as oito migrations aplicadas. Nunca usar `prisma db push` em
-produção; mudanças de schema devem usar migration revisada e backup prévio.
+Produção possui as nove migrations aplicadas, incluindo a unificação de
+empresas. Nunca usar `prisma db push` em produção; mudanças de schema devem usar
+migration revisada e backup prévio.
 
 ## Segurança, sessão e PWA
 
@@ -347,11 +355,8 @@ produção; mudanças de schema devem usar migration revisada e backup prévio.
 - O smoke autenticado não funciona com `ADMIN_PASSWORD` depois que o
   administrador troca sua senha; recomenda-se usuário técnico próprio.
 - Erros de Server Actions ainda não possuem tratamento amigável uniforme.
-- A maioria dos cadastros ainda não possui edição, inativação ou exclusão pela
-  interface. Exceções atuais: pessoas, tipos de lançamento e combustíveis.
-- Usuários e perfis podem ser criados, mas não alterados/desativados na tela.
-- Obras, equipamentos, contas, produtos, fornecedores, movimentos, compras e
-  abastecimentos não possuem edição pela interface.
+- Perfis, tipos de equipamento, produtos, movimentos, compras e abastecimentos
+  ainda não possuem edição pela interface.
 - Não há recuperação de senha, segundo fator ou revogação central de JWTs.
 - O limitador de login em memória não atende múltiplas instâncias.
 - Não há tela de auditoria.

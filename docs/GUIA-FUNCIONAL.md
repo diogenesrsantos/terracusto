@@ -7,6 +7,7 @@
 | `/` | Visão geral | `dashboard.view` | Indicadores do mês e últimos lançamentos |
 | `/pessoas` | Pessoas | `people.manage` | Pessoas, funções, atividades, edição e vínculos |
 | `/usuarios` | Usuários e acessos | `users.manage` | Cadastro, edição e paginação de usuários; perfis personalizados |
+| `/empresas` | Empresas | `companies.manage` | Cadastro único de clientes e fornecedores de combustível |
 | `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de centros de custo/obras |
 | `/equipamentos` | Equipamentos | `assets.manage` | Tipos, cadastro, edição e paginação de ativos |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
@@ -14,7 +15,7 @@
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento e balancete mensal |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura com senha e justificativa |
-| `/combustivel` | Combustível | `fuel.manage` | Postos, compras, tanque e abastecimentos |
+| `/combustivel` | Combustível | `fuel.manage` | Fornecedores, compras, tanque e abastecimentos |
 | `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas e ajustes positivos |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens de serviço |
 | `/perfil` | Minha conta | Usuário autenticado | Troca de senha |
@@ -24,7 +25,7 @@ a permissão exigida são redirecionados para `/sem-permissao`.
 
 O menu lateral possui submenus expansíveis e mostra somente opções autorizadas:
 
-- **Cadastros:** Pessoas, Usuários e acessos, Obras e Equipamentos;
+- **Cadastros:** Pessoas, Usuários e acessos, Empresas, Obras e Equipamentos;
 - **Contabilidade:** Plano de contas, Tipos de lançamento, Centro de custos e
   Fechamentos;
 - **Operacional:** Combustível, Almoxarifado e Manutenção.
@@ -43,21 +44,25 @@ O seed mantém dois perfis:
   `closing.reopen`.
 
 Novos perfis podem ser criados na tela de usuários escolhendo qualquer
-combinação das 11 permissões. Usuários existentes podem ter nome, e-mail,
+combinação das 12 permissões. Usuários existentes podem ter nome, e-mail,
 perfil, vínculo com pessoa e senha alterados; deixar a nova senha vazia preserva
 a credencial atual. Perfis ainda não possuem edição, desativação ou exclusão.
 
 ### Cadastros operacionais
 
-- As listagens de Usuários e acessos, Obras e Equipamentos apresentam até 20
-  registros por página e mostram a quantidade total cadastrada.
+- As listagens de Usuários e acessos, Empresas, Obras e Equipamentos apresentam
+  até 20 registros por página e mostram a quantidade total cadastrada.
 - Clicar ou usar Enter/Espaço em uma linha carrega o registro no formulário,
   destaca a seleção e ativa o modo de alteração. Cancelar ou salvar retorna o
   formulário ao modo de novo cadastro.
 - A edição de usuário permite alterar nome, e-mail, perfil e vínculo com pessoa.
   A senha é opcional na alteração e somente é substituída quando preenchida.
+- Empresas formam um cadastro único para clientes de obras e fornecedores de
+  combustível. Cada empresa pode ser marcada como fornecedora de combustível e
+  ativada ou inativada pela edição.
 - A edição de obra preserva o código autoincrementável e a competência; permite
-  alterar nome, cliente, descrição e data inicial.
+  alterar nome, empresa/cliente, descrição e data inicial. Sem empresa
+  selecionada, a obra é identificada como “Obra própria”.
 - A edição de equipamento permite alterar tipo, identificador, descrição,
   marca, modelo, combustível e consumo esperado.
 
@@ -131,6 +136,8 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 
 ### Combustível
 
+- Fornecedores de combustível são empresas ativas marcadas para essa finalidade
+  no cadastro `/empresas`; não existe um cadastro de postos separado.
 - Tipos de combustível possuem CRUD próprio com nome, preço de referência e
   situação. Registros sem uso são removidos; registros já vinculados a
   equipamentos, compras ou abastecimentos são desativados para preservar o
@@ -184,7 +191,7 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 
 O seed é idempotente e cria/atualiza:
 
-- as 11 permissões e os perfis `ADMIN` e `CLERK`;
+- as 12 permissões e os perfis `ADMIN` e `CLERK`;
 - as funções Administrativo, Auxiliar, Mecânico, Motorista e Operador de
   máquinas;
 - os tipos de equipamento Máquina, Veículo, Ferramenta e Outro;
