@@ -14,7 +14,7 @@
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Configuração das contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
-| `/relatorios/centro-custos` | Centro de custo | `accounting.manage` | Resumo ou detalhamento por obra e competência, com impressão |
+| `/relatorios/centro-custos` | Relatório de centro de custo | `accounting.manage` | Resumo ou detalhamento por obra e competência, com impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento e balancete mensal |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura com senha e justificativa |
 | `/combustivel` | Combustível | `fuel.manage` | Fornecedores, compras, tanque e abastecimentos |
@@ -136,6 +136,9 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   formulário preserva obra, data, tipo, histórico, documento, contas,
   equipamento e pessoa. Somente valor cobrado e as horas dos dois períodos são
   limpos, e o formulário retorna ao modo de novo lançamento.
+- O formulário organiza obra e competência na primeira linha; equipamento e
+  operador na segunda; data, os dois períodos e o total de horas na terceira;
+  histórico, documento e valor na quarta; tipo e contas na quinta.
 - A listagem do Centro de custos mostra somente os lançamentos da obra
   selecionada, em páginas de até 20 registros. Ao clicar ou usar Enter/Espaço
   em uma linha, o lançamento é carregado para edição. Os controles Anterior e

@@ -39,7 +39,7 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Cadastro, edição, situação, exclusão e contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtro por obra e edição |
-| `/relatorios/centro-custos` | Centro de custo | `accounting.manage` | Seleção de obra/competências, resumo, detalhamento e impressão |
+| `/relatorios/centro-custos` | Relatório de centro de custo | `accounting.manage` | Seleção de obra/competências, resumo, detalhamento e impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento de competências vencidas e balancete |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura mediante senha e justificativa |
 | `/combustivel` | Combustível | `fuel.manage` | Tipos, fornecedores, compras, saldo do tanque e abastecimentos |
@@ -151,6 +151,9 @@ omitidos.
 - Para lançamentos em grupo, após criar ou alterar um registro o formulário
   mantém obra, data, tipo, histórico, documento, contas, equipamento e pessoa.
   Somente valor cobrado e os horários dos dois períodos são limpos.
+- A apresentação agrupa o formulário em cinco linhas: obra/competência;
+  equipamento/operador; data, horários e total; histórico/documento/valor; tipo
+  e contas.
 - Os horários recebem apenas `HH:mm`; não se informa outra data. Cada período
   preenchido exige início e final, e o segundo período só pode existir junto do
   primeiro. O final deve ser posterior ao início, os períodos não podem se

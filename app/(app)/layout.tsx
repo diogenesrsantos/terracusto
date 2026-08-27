@@ -14,7 +14,7 @@ const groups = [
   { label: "Contabilidade", items: [
     ["accounting.manage", "/plano-contas", "Plano de contas"], ["accounting.manage", "/tipos-lancamento", "Tipos de lançamento"],
     ["accounting.manage", "/lancamentos", "Centro de custos"],
-    ["accounting.manage", "/relatorios/centro-custos", "Centro de custo"],
+    ["accounting.manage", "/relatorios/centro-custos", "Relatório de centro de custo"],
     ["closing.close", "/fechamentos", "Fechamentos"],
   ] },
   { label: "Operacional", items: [
