@@ -7,11 +7,17 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 27 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
-Alteração local pendente de implantação em 27/08/2026: o Centro de custos aceita
-um segundo período opcional no mesmo lançamento, permitindo registrar manhã e
-tarde e somar ambas as durações. Um único período continua funcionando. A
-migration `20260827174500_add_second_entry_period` adiciona duas colunas
-anuláveis e deverá ser precedida por backup antes de ser aplicada na produção.
+Em 27/08/2026, o Centro de custos passou a aceitar um segundo período opcional
+no mesmo lançamento, permitindo registrar manhã e tarde e somar ambas as
+durações. Um único período continua funcionando. A migration
+`20260827174500_add_second_entry_period` adicionou duas colunas anuláveis.
+
+Implantação validada em 27/08/2026: backup pré-migration
+`terracusto-20260827-144403.dump` (72.397 bytes), 10 migrations aplicadas sem
+pendências, build remoto aprovado com 20 rotas, serviço ativo desde 14:46 -03 e
+health check com aplicação e banco `ok`. O domínio público respondeu HTTP 307
+para `/login`, com os cabeçalhos de segurança, e o timer de backup permaneceu
+ativo.
 
 Em 27/08/2026, a listagem do Plano de contas foi convertida em TreeView. Contas
 sintéticas possuem ícone de pasta e controles de expansão; contas analíticas

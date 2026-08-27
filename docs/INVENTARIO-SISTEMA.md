@@ -317,10 +317,9 @@ O seed cria/atualiza:
 | `20260827141000_unify_companies` | Unifica clientes e fornecedores em `Company`, vincula obras e cria a permissão de empresas |
 | `20260827174500_add_second_entry_period` | Adiciona um segundo período opcional aos lançamentos para registrar jornadas com intervalo |
 
-Produção possui as nove primeiras migrations aplicadas, incluindo a unificação
-de empresas. A décima migration está preparada localmente e ainda requer backup
-e implantação. Nunca usar `prisma db push` em produção; mudanças de schema devem
-usar migration revisada e backup prévio.
+Produção possui as dez migrations aplicadas, incluindo o segundo período
+opcional dos lançamentos. Nunca usar `prisma db push` em produção; mudanças de
+schema devem usar migration revisada e backup prévio.
 
 ## Segurança, sessão e PWA
 
