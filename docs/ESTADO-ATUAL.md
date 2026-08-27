@@ -4,8 +4,15 @@ Registro da implantação inicial, validado em **26/08/2026**, no fuso
 `America/Bahia`.
 
 O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registra
-os módulos, fluxos, 27 modelos, ações, migrations, segurança, operação e limites
+os módulos, fluxos, 28 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
+
+Alteração local pendente de implantação em 27/08/2026: foi criada a rota
+`/configuracoes` para os dados da empresa usuária e o upload autenticado da
+imagem padrão dos relatórios. O componente `ReportHeader` posiciona a imagem à
+esquerda e reúne os dados institucionais. A migration
+`20260827183000_add_system_settings` cria o singleton e a permissão
+`settings.manage`; produção permanece com as 10 migrations anteriores.
 
 Em 27/08/2026, o Centro de custos passou a aceitar um segundo período opcional
 no mesmo lançamento, permitindo registrar manhã e tarde e somar ambas as

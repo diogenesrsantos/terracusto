@@ -73,11 +73,12 @@ de `Work.client` e substitui o texto pela chave estrangeira.
 
 ## Domínios de dados
 
-O schema possui 27 modelos, agrupados assim:
+O schema possui 28 modelos, agrupados assim:
 
 - Identidade: `Person`, `JobFunction`, `Activity`, `PersonActivity`, `User`, `Role`,
   `Permission`, `UserRole`, `RolePermission` e `AuditLog`.
-- Cadastros e operação: `Company`, `Work`, `EquipmentType` e `Asset`.
+- Cadastros e operação: `Company`, `SystemSettings`, `Work`, `EquipmentType` e
+  `Asset`.
 - Contabilidade: `Account`, `AccountingEntry`, `AccountingLine`,
   `AccountingPeriod`, `MonthlyClosing` e `EntryType`.
 - Combustível: `FuelType`, `FuelPurchase` e `FuelDispense`.
@@ -94,6 +95,13 @@ necessário, um segundo período anulável em `secondStartAt`/`secondEndAt`. A a
 de gravação valida pares completos, ordem e ausência de sobreposição e persiste
 em `hours` a soma decimal dos dois intervalos. Registros com apenas o primeiro
 período e registros legados sem horários permanecem válidos.
+
+`SystemSettings` é um singleton identificado por `default`. Além dos dados
+institucionais, guarda a imagem de relatórios como `Bytes` e seu MIME type no
+PostgreSQL. A rota autenticada `/api/configuracoes/imagem-relatorio` entrega o
+binário com `nosniff`; uploads aceitam somente PNG, JPEG e WebP, limitados a 2
+MB. `components/report-header.tsx` centraliza o cabeçalho imprimível e mantém a
+imagem à esquerda.
 
 ## Autenticação e autorização
 

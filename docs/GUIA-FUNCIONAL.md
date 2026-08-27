@@ -10,6 +10,7 @@
 | `/empresas` | Empresas | `companies.manage` | Cadastro único de clientes e fornecedores de combustível |
 | `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de centros de custo/obras |
 | `/equipamentos` | Equipamentos | `assets.manage` | Tipos, cadastro, edição e paginação de ativos |
+| `/configuracoes` | Configurações da empresa | `settings.manage` | Dados da empresa usuária e imagem dos relatórios |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Configuração das contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
@@ -25,7 +26,8 @@ a permissão exigida são redirecionados para `/sem-permissao`.
 
 O menu lateral possui submenus expansíveis e mostra somente opções autorizadas:
 
-- **Cadastros:** Pessoas, Usuários e acessos, Empresas, Obras e Equipamentos;
+- **Cadastros:** Pessoas, Usuários e acessos, Empresas, Obras, Equipamentos e
+  Configurações da empresa;
 - **Contabilidade:** Plano de contas, Tipos de lançamento, Centro de custos e
   Fechamentos;
 - **Operacional:** Combustível, Almoxarifado e Manutenção.
@@ -40,11 +42,11 @@ assistivas.
 O seed mantém dois perfis:
 
 - `ADMIN` (Administrador): recebe todas as permissões.
-- `CLERK` (Escriturário): recebe todas, exceto `users.manage` e
-  `closing.reopen`.
+- `CLERK` (Escriturário): recebe todas, exceto `users.manage`,
+  `closing.reopen` e `settings.manage`.
 
 Novos perfis podem ser criados na tela de usuários escolhendo qualquer
-combinação das 12 permissões. Usuários existentes podem ter nome, e-mail,
+combinação das 13 permissões. Usuários existentes podem ter nome, e-mail,
 perfil, vínculo com pessoa e senha alterados; deixar a nova senha vazia preserva
 a credencial atual. Perfis ainda não possuem edição, desativação ou exclusão.
 
@@ -63,6 +65,17 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 - A edição de obra preserva o código autoincrementável e a competência; permite
   alterar nome, empresa/cliente, descrição e data inicial. Sem empresa
   selecionada, a obra é identificada como “Obra própria”.
+
+### Configurações e relatórios
+
+- A configuração única da empresa usuária guarda razão social, CNPJ, endereço,
+  telefone, responsável e telefone do responsável.
+- A imagem dos relatórios aceita PNG, JPEG ou WebP de até 2 MB e fica armazenada
+  no próprio banco. Um novo envio substitui a imagem anterior; a remoção precisa
+  ser marcada explicitamente.
+- A imagem só é entregue a usuários autenticados. O cabeçalho padrão dos
+  relatórios posiciona a imagem à esquerda, os dados da empresa ao centro e o
+  título à direita, com adaptação para impressão e telas menores.
 - A edição de equipamento permite alterar tipo, identificador, descrição,
   marca, modelo, combustível e consumo esperado.
 

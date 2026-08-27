@@ -16,6 +16,7 @@ const permissions = [
   ["fuel.manage", "Gerenciar combustível"],
   ["stock.manage", "Gerenciar almoxarifado"],
   ["maintenance.manage", "Gerenciar manutenção"],
+  ["settings.manage", "Gerenciar configurações da empresa"],
 ] as const;
 
 const accounts = [
@@ -59,7 +60,7 @@ async function main() {
       where: { roleId_permissionId: { roleId: adminRole.id, permissionId: permission.id } },
       update: {}, create: { roleId: adminRole.id, permissionId: permission.id },
     });
-    if (!["users.manage", "closing.reopen"].includes(permission.code)) {
+    if (!["users.manage", "closing.reopen", "settings.manage"].includes(permission.code)) {
       await db.rolePermission.upsert({
         where: { roleId_permissionId: { roleId: clerkRole.id, permissionId: permission.id } },
         update: {}, create: { roleId: clerkRole.id, permissionId: permission.id },

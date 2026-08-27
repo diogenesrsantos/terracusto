@@ -49,6 +49,7 @@ button { cursor: pointer; }
 .metric strong { display: block; margin-top: .35rem; font-size: 1.65rem; }
 .field { display: grid; gap: .35rem; }
 .field label, label.field { color: #3e504a; font-size: .84rem; font-weight: 650; }
+.inline-checkbox { width: auto; margin-right: .4rem; }
 .elapsed-hours { color: #1769aa; font-size: .82rem; font-weight: 750; }
 input, select, textarea { min-width: 0; width: 100%; padding: .68rem .75rem; border: 1px solid #cdd8d2; border-radius: 8px; color: var(--ink); background: white; outline: none; }
 input:focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px #dceee6; }
@@ -102,6 +103,16 @@ tbody tr:hover { background: #f8faf8; }
 .account-tree-edit:hover { text-decoration: underline; }
 .account-edit-icon { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .mobile-head { display: none; }
+.report-header { display: grid; grid-template-columns: 150px minmax(260px, 1fr) minmax(220px, auto); align-items: center; gap: 1.25rem; padding: 0 0 1rem; border-bottom: 2px solid var(--ink); }
+.report-image-slot { display: grid; place-items: center; width: 150px; height: 90px; overflow: hidden; color: var(--muted); background: #f7f9f7; border: 1px dashed var(--line); }
+.report-image-slot img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: left center; }
+.report-company { display: grid; gap: .2rem; min-width: 0; font-size: .78rem; }
+.report-company strong { font-size: 1.05rem; }
+.report-header h1 { margin: 0; font-size: 1.35rem; text-align: right; }
+@media print {
+  .report-header { break-inside: avoid; }
+  .report-image-slot { border: 0; background: transparent; }
+}
 @media (max-width: 1000px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: repeat(2, 1fr); } .span-3, .span-4 { grid-column: 1 / -1; } }
 @media (max-width: 720px) {
   .login-shell { grid-template-columns: 1fr; } .login-brand { display: none; }
@@ -115,4 +126,7 @@ tbody tr:hover { background: #f8faf8; }
   .account-tree-head { display: none; }
   .account-tree { overflow-x: auto; }
   .account-tree-row { min-width: 650px; }
+  .report-header { grid-template-columns: 110px 1fr; }
+  .report-image-slot { width: 110px; height: 72px; }
+  .report-header h1 { grid-column: 1 / -1; text-align: left; }
 }

@@ -15,6 +15,8 @@ const text = (form: FormData, key: string) => String(form.get(key) || "").trim()
 const optional = (form: FormData, key: string) => text(form, key) || null;
 const decimal = (form: FormData, key: string) => new Prisma.Decimal(text(form, key).replace(",", ".") || 0);
 const when = (form: FormData, key: string) => new Date(`${text(form, key)}T12:00:00Z`);
+const REPORT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const REPORT_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 
 export async function login(form: FormData) {
   const requestHeaders = await headers();
@@ -97,6 +99,39 @@ export async function saveCompany(form: FormData) {
   const row = id ? await db.company.update({ where: { id }, data }) : await db.company.create({ data });
   await audit(user.userId, id ? "UPDATE" : "CREATE", "Company", row.id);
   ["/empresas", "/obras", "/combustivel"].forEach((path) => revalidatePath(path));
+}
+
+export async function saveSystemSettings(form: FormData) {
+  const user = await requirePermission("settings.manage");
+  const requiredFields = ["legalName", "cnpj", "address", "phone", "responsibleName", "responsiblePhone"];
+  if (requiredFields.some((field) => !text(form, field))) throw new Error("Preencha todos os dados da empresa.");
+  const cnpj = text(form, "cnpj");
+  if (cnpj.replace(/\D/g, "").length !== 14) throw new Error("Informe um CNPJ com 14 dígitos.");
+
+  const image = form.get("reportImage");
+  const removeImage = form.get("removeImage") === "true";
+  let imageData: { reportImage: Uint8Array; reportImageMimeType: string; reportImageFileName: string } | null = null;
+  if (image instanceof File && image.size > 0) {
+    if (removeImage) throw new Error("Escolha entre enviar uma nova imagem ou remover a imagem atual.");
+    if (!REPORT_IMAGE_TYPES.has(image.type)) throw new Error("A imagem deve estar em PNG, JPEG ou WebP.");
+    if (image.size > REPORT_IMAGE_MAX_BYTES) throw new Error("A imagem deve ter no máximo 2 MB.");
+    imageData = {
+      reportImage: new Uint8Array(await image.arrayBuffer()),
+      reportImageMimeType: image.type,
+      reportImageFileName: image.name.slice(0, 255),
+    };
+  }
+
+  const data = {
+    legalName: text(form, "legalName"), cnpj, address: text(form, "address"),
+    phone: text(form, "phone"), responsibleName: text(form, "responsibleName"),
+    responsiblePhone: text(form, "responsiblePhone"),
+    ...(removeImage ? { reportImage: null, reportImageMimeType: null, reportImageFileName: null } : imageData || {}),
+  };
+  const row = await db.systemSettings.upsert({ where: { id: "default" }, update: data, create: { id: "default", ...data } });
+  await audit(user.userId, "UPDATE", "SystemSettings", row.id, { imageUpdated: Boolean(imageData), imageRemoved: removeImage });
+  revalidatePath("/configuracoes");
+  revalidatePath("/api/configuracoes/imagem-relatorio");
 }
 
 export async function saveUser(form: FormData) {

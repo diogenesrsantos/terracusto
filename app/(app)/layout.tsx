@@ -9,6 +9,7 @@ const groups = [
     ["people.manage", "/pessoas", "Pessoas"], ["users.manage", "/usuarios", "Usuários e acessos"],
     ["companies.manage", "/empresas", "Empresas"], ["works.manage", "/obras", "Obras"],
     ["assets.manage", "/equipamentos", "Equipamentos"],
+    ["settings.manage", "/configuracoes", "Configurações da empresa"],
   ] },
   { label: "Contabilidade", items: [
     ["accounting.manage", "/plano-contas", "Plano de contas"], ["accounting.manage", "/tipos-lancamento", "Tipos de lançamento"],

@@ -35,6 +35,7 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/empresas` | Empresas | `companies.manage` | Cadastro, edição e paginação do catálogo compartilhado por obras e combustível |
 | `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de obras/centros de custo |
 | `/equipamentos` | Equipamentos | `assets.manage` | Cadastro de tipos e cadastro, edição e paginação de equipamentos/ativos |
+| `/configuracoes` | Configurações da empresa | `settings.manage` | Dados institucionais, upload da imagem e prévia do cabeçalho dos relatórios |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Cadastro, edição, situação, exclusão e contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtro por obra e edição |
@@ -51,7 +52,7 @@ O menu lateral só mostra módulos permitidos ao usuário. A autorização é
 repetida no servidor em todas as páginas protegidas e ações de escrita.
 
 A navegação é agrupada em submenus expansíveis: Cadastros reúne Pessoas,
-Usuários e acessos, Empresas, Obras e Equipamentos; Contabilidade reúne Plano de contas,
+Usuários e acessos, Empresas, Obras, Equipamentos e Configurações da empresa; Contabilidade reúne Plano de contas,
 Tipos de lançamento, Centro de custos e Fechamentos; Operacional reúne
 Combustível, Almoxarifado e Manutenção. Visão geral é um item direto. O grupo da rota atual abre
 automaticamente, o subitem recebe destaque e os gatilhos são acessíveis por
@@ -227,7 +228,7 @@ omitidos.
 
 ## Modelo de dados
 
-O schema possui 27 modelos:
+O schema possui 28 modelos:
 
 | Grupo | Modelo | Responsabilidade e vínculos principais |
 | --- | --- | --- |
@@ -242,6 +243,7 @@ O schema possui 27 modelos:
 | Identidade | `RolePermission` | Relação muitos-para-muitos perfil/permissão |
 | Identidade | `AuditLog` | Usuário, ação, entidade, identificador, motivo, JSON, IP e data |
 | Cadastro | `Company` | Empresa compartilhada por obras e fornecedores de combustível |
+| Configuração | `SystemSettings` | Dados únicos da empresa usuária e imagem binária dos relatórios |
 | Operação | `Work` | Obra/centro de custo e seus períodos, lançamentos e operações |
 | Operação | `EquipmentType` | Catálogo de tipos de equipamento |
 | Operação | `Asset` | Máquina, veículo, ferramenta ou outro ativo |
@@ -272,6 +274,7 @@ Valores monetários e quantitativos usam `Decimal`; identificadores internos usa
 | `people.manage` | `createActivity`, `createJobFunction`, `assignActivity` e `savePerson` |
 | `users.manage` | `saveUser` e `createRole` |
 | `companies.manage` | `saveCompany` |
+| `settings.manage` | `saveSystemSettings` |
 | `works.manage` | `saveWork`, incluindo a competência inicial somente na criação |
 | `assets.manage` | `createEquipmentType` e `saveAsset` |
 | `accounting.manage` | `saveAccount`, `saveEntryType`, `deleteEntryType` e `saveEntry` |
@@ -316,10 +319,12 @@ O seed cria/atualiza:
 | `20260827001000_sync_service_entry_types` | Cria tipos para contas analíticas já existentes sob Serviços/Reembolsáveis |
 | `20260827141000_unify_companies` | Unifica clientes e fornecedores em `Company`, vincula obras e cria a permissão de empresas |
 | `20260827174500_add_second_entry_period` | Adiciona um segundo período opcional aos lançamentos para registrar jornadas com intervalo |
+| `20260827183000_add_system_settings` | Cria a configuração única da empresa, armazenamento da imagem e permissão administrativa |
 
-Produção possui as dez migrations aplicadas, incluindo o segundo período
-opcional dos lançamentos. Nunca usar `prisma db push` em produção; mudanças de
-schema devem usar migration revisada e backup prévio.
+Produção possui as dez primeiras migrations aplicadas. A décima primeira está
+preparada localmente para as configurações da empresa e ainda requer backup e
+implantação. Nunca usar `prisma db push` em produção; mudanças de schema devem
+usar migration revisada e backup prévio.
 
 ## Segurança, sessão e PWA
 
