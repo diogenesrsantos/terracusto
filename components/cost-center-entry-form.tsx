@@ -9,6 +9,18 @@ import { Empty } from "@/components/page";
 type Option = { id: string; label: string };
 type WorkOption = Option & { competence: string; blocked: boolean };
 type EntryTypeOption = Option & { defaultDebitAccountId: string; defaultCreditAccountId: string };
+type EntryDraft = {
+  entryTypeId: string;
+  debitAccountId: string;
+  creditAccountId: string;
+  date: string;
+  history: string;
+  document: string;
+  assetId: string;
+  personId: string;
+};
+
+const draftKey = (workId: string) => `terracusto.entryDraft.${workId}`;
 export type CostCenterEntryItem = {
   id: string;
   date: string;
@@ -79,10 +91,31 @@ export function CostCenterEntryForm({
     return elapsed > 0 ? elapsed : null;
   }, [startTime, endTime]);
 
+  function applyDraft(draft: EntryDraft | null) {
+    setEntryTypeId(draft?.entryTypeId || "");
+    setDebitAccountId(draft?.debitAccountId || "");
+    setCreditAccountId(draft?.creditAccountId || "");
+    setDate(draft?.date || today);
+    setHistory(draft?.history || "");
+    setDocument(draft?.document || "");
+    setAssetId(draft?.assetId || "");
+    setPersonId(draft?.personId || "");
+  }
+
+  function readDraft(value: string): EntryDraft | null {
+    if (!value) return null;
+    try {
+      return JSON.parse(window.localStorage.getItem(draftKey(value)) || "null") as EntryDraft | null;
+    } catch {
+      return null;
+    }
+  }
+
   useEffect(() => {
     if (initialWorkId && works.some((work) => work.id === initialWorkId)) {
       setWorkId(initialWorkId);
       window.localStorage.setItem("terracusto.defaultWorkId", initialWorkId);
+      applyDraft(readDraft(initialWorkId));
       return;
     }
     const saved = window.localStorage.getItem("terracusto.defaultWorkId") || "";
@@ -92,6 +125,10 @@ export function CostCenterEntryForm({
   function selectWork(value: string) {
     setWorkId(value);
     setEditing(null);
+    applyDraft(readDraft(value));
+    setAmount("");
+    setStartTime("");
+    setEndTime("");
     if (value) {
       window.localStorage.setItem("terracusto.defaultWorkId", value);
       router.push(`/lancamentos?workId=${encodeURIComponent(value)}&page=1`);
@@ -125,7 +162,20 @@ export function CostCenterEntryForm({
   }
 
   async function submitEntry(form: FormData) {
+    const submittedWorkId = String(form.get("workId") || "");
+    const draft: EntryDraft = {
+      entryTypeId: String(form.get("entryTypeId") || ""),
+      debitAccountId: String(form.get("debitAccountId") || ""),
+      creditAccountId: String(form.get("creditAccountId") || ""),
+      date: String(form.get("date") || today),
+      history: String(form.get("history") || ""),
+      document: String(form.get("document") || ""),
+      assetId: String(form.get("assetId") || ""),
+      personId: String(form.get("personId") || ""),
+    };
+    window.localStorage.setItem(draftKey(submittedWorkId), JSON.stringify(draft));
     await saveEntry(form);
+    applyDraft(draft);
     setEditing(null);
     setAmount("");
     setStartTime("");
