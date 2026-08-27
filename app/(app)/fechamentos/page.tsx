@@ -1,23 +1,28 @@
 import { closePeriod, reopenPeriod } from "@/app/actions";
 import { Empty, PageHead } from "@/components/page";
 import { db } from "@/lib/db";
-import { money } from "@/lib/format";
+import { businessToday, money, monthStart } from "@/lib/format";
 import { getPermissions, requirePermission } from "@/lib/auth";
 
 export default async function ClosingsPage() {
   const user = await requirePermission("closing.close"); const permissions = await getPermissions(user.userId);
-  const [works, periods, closings] = await Promise.all([
-    db.work.findMany({ where: { active: true }, orderBy: { code: "asc" } }),
+  const currentCompetence = monthStart(businessToday());
+  const [overdueRows, closedPeriods, closings] = await Promise.all([
+    db.accountingPeriod.findMany({ where: { status: "OPEN", competence: { lt: currentCompetence }, work: { active: true } }, include: { work: true }, orderBy: [{ competence: "asc" }, { work: { code: "asc" } }] }),
     db.accountingPeriod.findMany({ where: { status: "CLOSED" }, include: { work: true }, orderBy: { competence: "desc" }, take: 24 }),
     db.monthlyClosing.findMany({ include: { work: true, account: true }, orderBy: [{ competence: "desc" }, { account: { code: "asc" } }], take: 200 }),
   ]);
+  const seenWorks = new Set<string>();
+  const overduePeriods = overdueRows.filter((period) => {
+    if (seenWorks.has(period.workId)) return false;
+    seenWorks.add(period.workId); return true;
+  });
   return <><PageHead title="Fechamentos mensais" subtitle="Consolidação de débitos, créditos e saldos por obra." />
-    <section className="grid grid-2"><div className="card"><h2>Fechar competência</h2><form action={closePeriod} className="grid">
-      <label className="field">Obra<select name="workId" required><option value="">Selecione</option>{works.map((w) => <option key={w.id} value={w.id}>{w.code} — {w.name}</option>)}</select></label>
-      <label className="field">Competência<input name="competence" type="month" required /></label><button className="btn">Fechar e transportar saldos</button>
+    <section className="grid grid-2"><div className="card"><h2>Fechar competência vencida</h2><form action={closePeriod} className="grid">
+      {overduePeriods.length === 0 ? <Empty>Nenhuma competência vencida aguarda fechamento.</Empty> : <><label className="field">Obra e competência<select name="periodId" required><option value="">Selecione</option>{overduePeriods.map((period) => <option key={period.id} value={period.id}>{period.work.code} — {period.work.name} — {period.competence.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })}</option>)}</select></label><button className="btn">Fechar e liberar o mês vigente</button></>}
     </form></div>
     {permissions.has("closing.reopen") && <div className="card"><h2>Reabrir competência</h2><form action={reopenPeriod} className="grid">
-      <label className="field">Competência fechada<select name="periodId" required><option value="">Selecione</option>{periods.map((p) => <option key={p.id} value={p.id}>{p.work.code} — {p.competence.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })}</option>)}</select></label>
+      <label className="field">Competência fechada<select name="periodId" required><option value="">Selecione</option>{closedPeriods.map((period) => <option key={period.id} value={period.id}>{period.work.code} — {period.competence.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })}</option>)}</select></label>
       <label className="field">Sua senha<input name="password" type="password" required /></label><label className="field">Justificativa<input name="reason" minLength={5} required /></label><button className="btn danger">Reabrir período</button>
     </form></div>}</section>
     <section className="card mt"><h2>Balancete de competências fechadas</h2>{closings.length === 0 ? <Empty>Nenhuma competência foi fechada.</Empty> : <div className="table-wrap"><table><thead><tr><th>Competência</th><th>Obra</th><th>Conta</th><th className="text-right">Saldo anterior</th><th className="text-right">Débitos</th><th className="text-right">Créditos</th><th className="text-right">Saldo final</th></tr></thead><tbody>

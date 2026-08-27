@@ -1,0 +1,140 @@
+# Arquitetura técnica
+
+## Visão geral
+
+O TerraCusto é uma aplicação monolítica Next.js com App Router. As páginas são
+renderizadas no servidor, formulários chamam Server Actions e toda persistência
+passa pelo Prisma para um PostgreSQL único.
+
+```text
+Navegador/PWA
+    │ HTTPS
+    ▼
+Nginx :443
+    │ proxy HTTP local
+    ▼
+Next.js :3120 ── Prisma Client ── PostgreSQL
+    │
+    ├── Server Components: consultas e telas
+    ├── Server Actions: validação, escrita e auditoria
+    └── /api/health: teste de aplicação e banco
+```
+
+## Estrutura do repositório
+
+| Caminho | Responsabilidade |
+| --- | --- |
+| `app/(app)` | Área autenticada e módulos funcionais |
+| `app/actions.ts` | Escritas, regras de negócio e revalidação de páginas |
+| `app/api/health` | Health check com `SELECT 1` |
+| `components` | Componentes visuais compartilhados |
+| `lib/auth.ts` | Sessão JWT e autorização por permissão |
+| `lib/audit.ts` | Persistência do histórico de ações |
+| `lib/db.ts` | Instância compartilhada do Prisma Client |
+| `lib/format.ts` | Datas, números, moeda e competência |
+| `lib/rate-limit.ts` | Limite de tentativas de login por IP |
+| `prisma/schema.prisma` | Modelo de dados canônico |
+| `prisma/migrations` | Histórico aplicável em produção |
+| `prisma/seed.ts` | Perfis, permissões e cadastros iniciais |
+| `public/sw.js` | Cache dos recursos estáticos da PWA |
+| `deployment` | Nginx, systemd, backup e manual operacional |
+| `scripts/smoke.mjs` | Teste ponta a ponta mínimo |
+
+## Domínios de dados
+
+O schema possui 27 modelos, agrupados assim:
+
+- Identidade: `Person`, `JobFunction`, `Activity`, `PersonActivity`, `User`, `Role`,
+  `Permission`, `UserRole`, `RolePermission` e `AuditLog`.
+- Operação: `Work`, `EquipmentType` e `Asset`.
+- Contabilidade: `Account`, `AccountingEntry`, `AccountingLine`,
+  `AccountingPeriod`, `MonthlyClosing` e `EntryType`.
+- Combustível: `Supplier`, `FuelType`, `FuelPurchase` e `FuelDispense`.
+- Estoque: `Product` e `StockMovement`.
+- Manutenção: `MaintenanceOrder` e `MaintenancePart`.
+
+Valores monetários e quantidades usam `Decimal` no PostgreSQL/Prisma. Datas de
+lançamento inseridas pela interface são normalizadas para meio-dia UTC, evitando
+mudança do dia ao exibir no fuso brasileiro. Competências usam o primeiro dia do
+mês em UTC.
+
+## Autenticação e autorização
+
+- A autenticação usa e-mail e senha com `bcrypt`, custo 12.
+- A sessão é um JWT HS256 no cookie `terracusto_session`, com validade de 8
+  horas, `HttpOnly`, `SameSite=Lax`, caminho `/` e `Secure` em produção.
+- `AUTH_SECRET` assina os tokens. O fallback presente no código serve somente
+  para desenvolvimento; produção deve sempre definir uma chave forte.
+- A autorização consulta as permissões ligadas aos perfis do usuário em cada
+  entrada protegida e em cada Server Action.
+- O login permite até oito falhas por IP em uma janela de 15 minutos.
+
+O limitador atual usa memória do processo. Ele é reiniciado junto com a
+aplicação e não é compartilhado se houver múltiplas instâncias. Se a aplicação
+for escalada horizontalmente, substituir por um armazenamento compartilhado
+(por exemplo, Redis ou tabela com expiração).
+
+## Segurança operacional
+
+O Next.js envia HSTS, `X-Content-Type-Options: nosniff`,
+`X-Frame-Options: SAMEORIGIN`, política de referência restrita e desabilita
+câmera, microfone e geolocalização. O cabeçalho identificador do framework está
+desabilitado.
+
+O serviço systemd usa usuário dedicado, `NoNewPrivileges`, `PrivateTmp` e
+`ProtectSystem=full`. Segredos não fazem parte do build ou do Git.
+
+Pontos a preservar em futuras alterações:
+
+- toda escrita deve repetir a autorização no servidor, mesmo que o botão esteja
+  oculto na interface;
+- alterações financeiras devem respeitar `assertOpen` e preferir transações;
+- ações relevantes devem chamar `audit` depois da conclusão;
+- migrations de produção devem ser aditivas e precedidas de backup;
+- nunca usar `prisma db push` em produção;
+- não incluir `.env`, dumps, credenciais nem dados pessoais em commits/logs.
+
+`assertOpen` é a barreira central das competências: usa o calendário de
+`America/Bahia`, rejeita datas futuras, impede datas fora do mês operacional e
+bloqueia obras com competência vencida. Não contorne essa função em novas ações
+que criem ou alterem `AccountingEntry`. Na edição, a ação valida tanto a
+competência original quanto a competência de destino e substitui as linhas de
+débito e crédito na mesma atualização transacional do Prisma.
+
+## PWA
+
+O manifesto configura modo `standalone`, nome, cores e ícone. O service worker
+armazena apenas o manifesto, ícone e arquivos versionados de `/_next/static`.
+Páginas e dados autenticados não são cacheados para uso offline. Ao alterar a
+estratégia ou ativos do service worker, incremente `terracusto-static-v1` para
+invalidar caches antigos.
+
+## Variáveis de ambiente
+
+| Variável | Uso |
+| --- | --- |
+| `DATABASE_URL` | Conexão PostgreSQL usada pelo Prisma |
+| `AUTH_SECRET` | Assinatura dos tokens de sessão |
+| `ADMIN_EMAIL` | Administrador criado pelo seed e login do smoke test |
+| `ADMIN_PASSWORD` | Senha inicial do seed e login do smoke test |
+| `NEXT_PUBLIC_APP_URL` | URL base usada pelo smoke test |
+| `NODE_ENV` | Ativa cookie seguro e modo de produção |
+| `PORT` | Porta do processo Next.js; produção usa `3120` |
+
+## Limites conhecidos da versão inicial
+
+- Não há testes unitários ou de integração; a cobertura automatizada atual é
+  typecheck, build e smoke test.
+- O tratamento de erros de formulários depende da resposta padrão das Server
+  Actions; não há mensagens amigáveis para todas as falhas.
+- Não há edição, exclusão ou inativação pela interface para a maioria dos
+  cadastros.
+- Não há recuperação de senha, segundo fator ou encerramento centralizado de
+  sessões já emitidas.
+- O JWT guarda nome e e-mail até expirar; mudanças nesses campos não atualizam
+  uma sessão já aberta.
+- O saldo de combustível não distingue tanque/local/obra.
+- Peças de manutenção existem no schema, mas não estão integradas ao estoque na
+  interface.
+- O backup é local à mesma VPS; para recuperação de desastre, deve existir uma
+  cópia externa testada.

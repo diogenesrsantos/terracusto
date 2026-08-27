@@ -1,31 +1,91 @@
-import { createEntry } from "@/app/actions";
-import { Empty, PageHead } from "@/components/page";
+import { PageHead } from "@/components/page";
+import { CostCenterEntryForm, type CostCenterEntryItem } from "@/components/cost-center-entry-form";
+import { EntryTypeManager } from "@/components/entry-type-manager";
 import { db } from "@/lib/db";
-import { money, number } from "@/lib/format";
+import { businessToday, dateInput, monthStart, number, timeInput } from "@/lib/format";
 import { requirePermission } from "@/lib/auth";
 
-export default async function EntriesPage() {
+const PAGE_SIZE = 20;
+
+export default async function EntriesPage({ searchParams }: { searchParams: Promise<{ workId?: string; page?: string }> }) {
   await requirePermission("accounting.manage");
-  const [entries, works, accounts, people, assets] = await Promise.all([
-    db.accountingEntry.findMany({ include: { work: true, person: true, asset: true, lines: { include: { account: true } } }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 100 }),
+  const params = await searchParams;
+  const today = businessToday();
+  const currentCompetence = monthStart(today);
+  const [works, accounts, people, assets, openPeriods, entryTypes] = await Promise.all([
     db.work.findMany({ where: { active: true }, orderBy: { code: "asc" } }),
     db.account.findMany({ where: { active: true, analytic: true }, orderBy: { code: "asc" } }),
-    db.person.findMany({ where: { active: true }, orderBy: { name: "asc" } }), db.asset.findMany({ where: { active: true }, orderBy: { identifier: "asc" } }),
+    db.person.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    db.asset.findMany({ where: { active: true }, orderBy: { identifier: "asc" } }),
+    db.accountingPeriod.findMany({ where: { status: "OPEN", work: { active: true } }, orderBy: { competence: "asc" } }),
+    db.entryType.findMany({ include: { defaultDebitAccount: true, defaultCreditAccount: true }, orderBy: { name: "asc" } }),
   ]);
-  return <><PageHead title="Lançamentos" subtitle="Receitas, despesas e serviços contabilizados por obra." />
-    <section className="card"><h2>Novo lançamento</h2><form action={createEntry} className="form-grid">
-      <label className="field">Data<input name="date" type="date" required /></label><label className="field">Obra<select name="workId" required><option value="">Selecione</option>{works.map((w) => <option key={w.id} value={w.id}>{w.code} — {w.name}</option>)}</select></label>
-      <label className="field span-2">Histórico<input name="history" required /></label><label className="field">Documento<input name="document" /></label>
-      <label className="field">Conta debitada<select name="debitAccountId" required><option value="">Selecione</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</select></label>
-      <label className="field">Conta creditada<select name="creditAccountId" required><option value="">Selecione</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.code} — {a.name}</option>)}</select></label>
-      <label className="field">Valor (R$)<input name="amount" type="number" step="0.01" min="0.01" required /></label>
-      <label className="field">Equipamento<select name="assetId"><option value="">Não se aplica</option>{assets.map((a) => <option key={a.id} value={a.id}>{a.identifier} — {a.description}</option>)}</select></label>
-      <label className="field">Operador/motorista<select name="personId"><option value="">Não se aplica</option>{people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-      <label className="field">Início do serviço<input name="startAt" type="datetime-local" /></label><label className="field">Final do serviço<input name="endAt" type="datetime-local" /></label>
-      <button className="btn span-4">Contabilizar lançamento</button>
-    </form></section>
-    <section className="card mt"><h2>Últimos lançamentos</h2>{entries.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Obra</th><th>Histórico</th><th>Contas</th><th>Equipamento/pessoa</th><th>Horas</th><th className="text-right">Valor</th></tr></thead><tbody>
-      {entries.map((e) => <tr key={e.id}><td>{e.date.toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td><strong>{e.work.code}</strong></td><td>{e.history}<br /><small className="muted">{e.document || "Sem documento"}</small></td><td>{e.lines.map((l) => <small key={l.id} style={{display:"block"}}>{Number(l.debit) > 0 ? "D" : "C"} · {l.account.code} {l.account.name}</small>)}</td><td>{e.asset?.identifier || "—"}<br /><small>{e.person?.name}</small></td><td>{e.hours ? number(e.hours) : "—"}</td><td className="text-right">{money(e.lines.reduce((s, l) => s + Number(l.debit), 0))}</td></tr>)}
-    </tbody></table></div>}</section>
+
+  const selectedWorkId = works.some((work) => work.id === params.workId) ? params.workId! : "";
+  const requestedPage = Math.max(1, Number.parseInt(params.page || "1", 10) || 1);
+  const entryWhere = { workId: selectedWorkId, entryTypeId: { not: null } };
+  const totalEntries = selectedWorkId ? await db.accountingEntry.count({ where: entryWhere }) : 0;
+  const totalPages = Math.max(1, Math.ceil(totalEntries / PAGE_SIZE));
+  const page = Math.min(requestedPage, totalPages);
+  const entries = selectedWorkId ? await db.accountingEntry.findMany({
+    where: entryWhere,
+    include: { person: true, asset: true, entryType: true, lines: { include: { account: true } } },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    skip: (page - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  }) : [];
+
+  const serializedEntries: CostCenterEntryItem[] = entries.map((entry) => {
+    const debitLine = entry.lines.find((line) => Number(line.debit) > 0);
+    const creditLine = entry.lines.find((line) => Number(line.credit) > 0);
+    return {
+      id: entry.id,
+      date: dateInput(entry.date),
+      history: entry.history,
+      document: entry.document || "",
+      amount: debitLine ? String(debitLine.debit) : "",
+      entryTypeId: entry.entryTypeId || "",
+      entryTypeName: entry.entryType?.name || "Sem tipo",
+      debitAccountId: debitLine?.accountId || "",
+      creditAccountId: creditLine?.accountId || "",
+      accountSummary: entry.lines.map((line) => `${Number(line.debit) > 0 ? "D" : "C"} · ${line.account.code} ${line.account.name}`),
+      assetId: entry.assetId || "",
+      assetLabel: entry.asset ? `${entry.asset.identifier} — ${entry.asset.description}` : "",
+      personId: entry.personId || "",
+      personName: entry.person?.name || "",
+      startTime: timeInput(entry.startAt),
+      endTime: timeInput(entry.endAt),
+      hours: entry.hours ? number(entry.hours) : "",
+    };
+  });
+
+  const accountOptions = accounts.map((account) => ({ id: account.id, label: `${account.code} — ${account.name}` }));
+  return <>
+    <PageHead title="Centro de custos" subtitle="Receitas, despesas e serviços contabilizados por obra." />
+    <CostCenterEntryForm
+      key={`${selectedWorkId}:${page}`}
+      today={dateInput(today)} initialWorkId={selectedWorkId} page={page} totalPages={totalPages}
+      totalEntries={totalEntries} entries={serializedEntries}
+      works={works.map((work) => {
+        const open = openPeriods.find((period) => period.workId === work.id);
+        const competence = open?.competence || currentCompetence;
+        return { id: work.id, label: `${work.code} — ${work.name}`, competence: dateInput(competence), blocked: competence < currentCompetence };
+      })}
+      accounts={accountOptions}
+      people={people.map((person) => ({ id: person.id, label: person.name }))}
+      assets={assets.map((asset) => ({ id: asset.id, label: `${asset.identifier} — ${asset.description}` }))}
+      entryTypes={entryTypes.filter((entryType) => entryType.active).map((entryType) => ({
+        id: entryType.id, label: entryType.name,
+        defaultDebitAccountId: entryType.defaultDebitAccountId,
+        defaultCreditAccountId: entryType.defaultCreditAccountId,
+      }))}
+    />
+    <div className="mt"><EntryTypeManager accounts={accountOptions} entryTypes={entryTypes.map((entryType) => ({
+      id: entryType.id, name: entryType.name, active: entryType.active,
+      defaultDebitAccountId: entryType.defaultDebitAccountId,
+      defaultCreditAccountId: entryType.defaultCreditAccountId,
+      defaultDebitAccountLabel: `${entryType.defaultDebitAccount.code} — ${entryType.defaultDebitAccount.name}`,
+      defaultCreditAccountLabel: `${entryType.defaultCreditAccount.code} — ${entryType.defaultCreditAccount.name}`,
+    }))} /></div>
   </>;
 }

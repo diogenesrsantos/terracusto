@@ -25,12 +25,16 @@ const accounts = [
   ["2", "Passivo", AccountNature.CREDIT, false],
   ["2.1", "Fornecedores", AccountNature.CREDIT, true],
   ["3", "Receitas", AccountNature.CREDIT, false],
-  ["3.1", "Receita de serviços", AccountNature.CREDIT, true],
+  ["3.1", "Serviços", AccountNature.CREDIT, false],
+  ["3.1.1", "Serviços de máquinas", AccountNature.CREDIT, true],
+  ["3.2", "Despesas reembolsáveis", AccountNature.CREDIT, false],
+  ["3.2.1", "Reembolso de alimentação", AccountNature.CREDIT, true],
   ["4", "Custos e despesas", AccountNature.DEBIT, false],
   ["4.1", "Combustíveis", AccountNature.DEBIT, true],
   ["4.2", "Manutenção", AccountNature.DEBIT, true],
   ["4.3", "Materiais", AccountNature.DEBIT, true],
   ["4.4", "Serviços de terceiros", AccountNature.DEBIT, true],
+  ["4.5", "Alimentação", AccountNature.DEBIT, true],
 ] as const;
 
 async function main() {
@@ -76,6 +80,29 @@ async function main() {
   }
   for (const name of ["Operar escavadeira", "Operar retroescavadeira", "Dirigir caminhão", "Manutenção mecânica"]) {
     await db.activity.upsert({ where: { name }, update: {}, create: { name } });
+  }
+  for (const name of ["Administrativo", "Auxiliar", "Mecânico", "Motorista", "Operador de máquinas"]) {
+    await db.jobFunction.upsert({ where: { name }, update: { active: true }, create: { name } });
+  }
+  for (const name of ["Máquina", "Veículo", "Ferramenta", "Outro"]) {
+    await db.equipmentType.upsert({ where: { name }, update: { active: true }, create: { name } });
+  }
+
+  const entryTypes = [
+    ["Serviço de máquinas", "1.2", "3.1.1"],
+    ["Reembolso de alimentação", "1.2", "3.2.1"],
+    ["Alimentação paga", "4.5", "1.1"],
+  ] as const;
+  for (const [name, debitCode, creditCode] of entryTypes) {
+    const [debit, credit] = await Promise.all([
+      db.account.findUniqueOrThrow({ where: { code: debitCode } }),
+      db.account.findUniqueOrThrow({ where: { code: creditCode } }),
+    ]);
+    await db.entryType.upsert({
+      where: { name },
+      update: { active: true, defaultDebitAccountId: debit.id, defaultCreditAccountId: credit.id },
+      create: { name, defaultDebitAccountId: debit.id, defaultCreditAccountId: credit.id },
+    });
   }
 
   const email = (process.env.ADMIN_EMAIL || "admin@terracusto.local").toLowerCase();

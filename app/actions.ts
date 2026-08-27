@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { clearSession, createSession, requirePermission, requireUser } from "@/lib/auth";
-import { monthStart } from "@/lib/format";
+import { businessToday, monthStart } from "@/lib/format";
 import { checkLoginRate, recordLoginFailure, resetLoginRate } from "@/lib/rate-limit";
 
 const text = (form: FormData, key: string) => String(form.get(key) || "").trim();
@@ -38,6 +38,12 @@ export async function createActivity(form: FormData) {
   await audit(user.userId, "CREATE", "Activity", row.id); revalidatePath("/pessoas");
 }
 
+export async function createJobFunction(form: FormData) {
+  const user = await requirePermission("people.manage");
+  const row = await db.jobFunction.create({ data: { name: text(form, "name") } });
+  await audit(user.userId, "CREATE", "JobFunction", row.id); revalidatePath("/pessoas");
+}
+
 export async function assignActivity(form: FormData) {
   const user = await requirePermission("people.manage");
   const personId = text(form, "personId"), activityId = text(form, "activityId");
@@ -65,14 +71,18 @@ export async function changePassword(form: FormData) {
   redirect("/perfil?ok=1");
 }
 
-export async function createPerson(form: FormData) {
+export async function savePerson(form: FormData) {
   const user = await requirePermission("people.manage");
-  const row = await db.person.create({ data: {
+  const id = optional(form, "id");
+  const data = {
     name: text(form, "name"), cpf: optional(form, "cpf"), phone: optional(form, "phone"),
-    email: optional(form, "email"), roleTitle: optional(form, "roleTitle"),
+    email: optional(form, "email"), jobFunctionId: optional(form, "jobFunctionId"),
     type: text(form, "type") as "EMPLOYEE" | "CONTRACTOR" | "OTHER", notes: optional(form, "notes"),
-  }});
-  await audit(user.userId, "CREATE", "Person", row.id);
+  };
+  const row = id
+    ? await db.person.update({ where: { id }, data })
+    : await db.person.create({ data });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "Person", row.id);
   revalidatePath("/pessoas");
 }
 
@@ -101,17 +111,25 @@ export async function createRole(form: FormData) {
 export async function createWork(form: FormData) {
   const user = await requirePermission("works.manage");
   const row = await db.work.create({ data: {
-    code: text(form, "code").toUpperCase(), name: text(form, "name"), client: text(form, "client"),
+    name: text(form, "name"), client: text(form, "client"),
     description: optional(form, "description"), startDate: text(form, "startDate") ? when(form, "startDate") : null,
+    periods: { create: { competence: monthStart(businessToday()) } },
   }});
   await audit(user.userId, "CREATE", "Work", row.id);
   revalidatePath("/obras");
 }
 
+export async function createEquipmentType(form: FormData) {
+  const user = await requirePermission("assets.manage");
+  const row = await db.equipmentType.create({ data: { name: text(form, "name") } });
+  await audit(user.userId, "CREATE", "EquipmentType", row.id);
+  revalidatePath("/equipamentos");
+}
+
 export async function createAsset(form: FormData) {
   const user = await requirePermission("assets.manage");
   const row = await db.asset.create({ data: {
-    kind: text(form, "kind") as "MACHINE" | "VEHICLE" | "TOOL" | "OTHER",
+    equipmentTypeId: text(form, "equipmentTypeId"),
     identifier: text(form, "identifier").toUpperCase().replace(/[^A-Z0-9-]/g, ""),
     description: text(form, "description"), brand: optional(form, "brand"), model: optional(form, "model"),
     fuelTypeId: optional(form, "fuelTypeId"), expectedUsage: text(form, "expectedUsage") ? decimal(form, "expectedUsage") : null,
@@ -122,55 +140,150 @@ export async function createAsset(form: FormData) {
 
 export async function createAccount(form: FormData) {
   const user = await requirePermission("accounting.manage");
+  const parentId = optional(form, "parentId");
   const row = await db.account.create({ data: {
     code: text(form, "code"), name: text(form, "name"),
     nature: text(form, "nature") as "DEBIT" | "CREDIT", analytic: text(form, "analytic") === "true",
-    parentId: optional(form, "parentId"),
+    parentId,
   }});
   await audit(user.userId, "CREATE", "Account", row.id);
+  if (row.analytic && parentId) {
+    const [parent, clients] = await Promise.all([
+      db.account.findUnique({ where: { id: parentId }, select: { code: true } }),
+      db.account.findUnique({ where: { code: "1.2" }, select: { id: true } }),
+    ]);
+    if (parent && clients && ["3.1", "3.2"].includes(parent.code)) {
+      const entryType = await db.entryType.upsert({
+        where: { name: row.name }, update: {},
+        create: { name: row.name, defaultDebitAccountId: clients.id, defaultCreditAccountId: row.id },
+      });
+      await audit(user.userId, "ENSURE_AUTO", "EntryType", entryType.id, { sourceAccountId: row.id });
+    }
+  }
   revalidatePath("/plano-contas");
+  revalidatePath("/lancamentos");
+  revalidatePath("/combustivel");
 }
 
-async function assertOpen(workId: string, competence: Date) {
-  const period = await db.accountingPeriod.findUnique({ where: { workId_competence: { workId, competence } } });
-  if (period?.status === "CLOSED") throw new Error("Esta competência está fechada.");
-}
-
-export async function createEntry(form: FormData) {
+export async function saveEntryType(form: FormData) {
   const user = await requirePermission("accounting.manage");
+  const id = optional(form, "id");
+  const defaultDebitAccountId = text(form, "defaultDebitAccountId");
+  const defaultCreditAccountId = text(form, "defaultCreditAccountId");
+  const validAccounts = await db.account.count({ where: {
+    id: { in: [defaultDebitAccountId, defaultCreditAccountId] }, active: true, analytic: true,
+  }});
+  if (validAccounts !== 2 || defaultDebitAccountId === defaultCreditAccountId) {
+    throw new Error("Selecione duas contas analíticas ativas e distintas.");
+  }
+  const data = {
+    name: text(form, "name"), defaultDebitAccountId, defaultCreditAccountId,
+    active: id ? text(form, "active") === "true" : true,
+  };
+  const row = id
+    ? await db.entryType.update({ where: { id }, data })
+    : await db.entryType.create({ data });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "EntryType", row.id);
+  revalidatePath("/lancamentos");
+}
+
+export async function deleteEntryType(form: FormData) {
+  const user = await requirePermission("accounting.manage");
+  const id = text(form, "id");
+  const used = await db.accountingEntry.count({ where: { entryTypeId: id } });
+  if (used) await db.entryType.update({ where: { id }, data: { active: false } });
+  else await db.entryType.delete({ where: { id } });
+  await audit(user.userId, used ? "DEACTIVATE" : "DELETE", "EntryType", id);
+  revalidatePath("/lancamentos");
+}
+
+async function assertOpen(workId: string, date: Date) {
+  const today = businessToday();
+  const currentCompetence = monthStart(today);
+  const competence = monthStart(date);
+  if (date > today) throw new Error("Não é permitido lançar em data futura.");
+
+  const openPeriod = await db.accountingPeriod.findFirst({
+    where: { workId, status: "OPEN" }, orderBy: { competence: "asc" },
+  });
+  if (openPeriod && openPeriod.competence < currentCompetence) {
+    throw new Error("A competência anterior venceu. Feche-a antes de realizar novos lançamentos.");
+  }
+  if (openPeriod && openPeriod.competence.getTime() !== competence.getTime()) {
+    throw new Error("A data deve pertencer à competência vigente da obra.");
+  }
+  if (!openPeriod) {
+    if (competence.getTime() !== currentCompetence.getTime()) {
+      throw new Error("A data deve pertencer ao mês vigente.");
+    }
+    const period = await db.accountingPeriod.findUnique({ where: { workId_competence: { workId, competence } } });
+    if (period?.status === "CLOSED") throw new Error("Esta competência está fechada.");
+    if (!period) await db.accountingPeriod.create({ data: { workId, competence } });
+  }
+  return competence;
+}
+
+export async function saveEntry(form: FormData) {
+  const user = await requirePermission("accounting.manage");
+  const id = optional(form, "id");
   const workId = text(form, "workId");
   const date = when(form, "date");
-  const competence = monthStart(date);
+  if (id) {
+    const existing = await db.accountingEntry.findUniqueOrThrow({
+      where: { id }, select: { workId: true, date: true, fuelPurchase: { select: { id: true } } },
+    });
+    if (existing.fuelPurchase) throw new Error("Compras de combustível não podem ser alteradas pelo Centro de custos.");
+    await assertOpen(existing.workId, existing.date);
+  }
+  const entryTypeId = text(form, "entryTypeId");
+  const entryType = await db.entryType.findFirst({ where: { id: entryTypeId, active: true }, select: { id: true } });
+  if (!entryType) throw new Error("Selecione um tipo de lançamento ativo.");
+  const competence = await assertOpen(workId, date);
   const amount = decimal(form, "amount");
   const debitAccountId = text(form, "debitAccountId");
   const creditAccountId = text(form, "creditAccountId");
   if (amount.lte(0) || debitAccountId === creditAccountId) throw new Error("Valor e contas do lançamento são inválidos.");
-  await assertOpen(workId, competence);
   const accounts = await db.account.count({ where: { id: { in: [debitAccountId, creditAccountId] }, active: true, analytic: true } });
   if (accounts !== 2) throw new Error("Use duas contas analíticas ativas.");
   let startAt: Date | null = null, endAt: Date | null = null, hours: Prisma.Decimal | null = null;
-  if (text(form, "startAt") && text(form, "endAt")) {
-    startAt = new Date(text(form, "startAt")); endAt = new Date(text(form, "endAt"));
+  const startTime = text(form, "startTime"); const endTime = text(form, "endTime");
+  if (Boolean(startTime) !== Boolean(endTime)) throw new Error("Informe as horas inicial e final.");
+  if (startTime && endTime) {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime)) {
+      throw new Error("Informe horas válidas.");
+    }
+    const day = text(form, "date");
+    startAt = new Date(`${day}T${startTime}:00-03:00`); endAt = new Date(`${day}T${endTime}:00-03:00`);
     if (endAt <= startAt) throw new Error("A hora final deve ser posterior à inicial.");
     hours = new Prisma.Decimal((endAt.getTime() - startAt.getTime()) / 3_600_000);
   }
-  const row = await db.accountingEntry.create({ data: {
+  const data = {
     date, competence, history: text(form, "history"), document: optional(form, "document"), workId,
-    personId: optional(form, "personId"), assetId: optional(form, "assetId"), startAt, endAt, hours,
-    createdById: user.userId,
+    personId: optional(form, "personId"), assetId: optional(form, "assetId"), entryTypeId, startAt, endAt, hours,
     lines: { create: [
       { accountId: debitAccountId, debit: amount, credit: 0 },
       { accountId: creditAccountId, debit: 0, credit: amount },
     ] },
-  }});
-  await audit(user.userId, "CREATE", "AccountingEntry", row.id);
+  };
+  const row = id
+    ? await db.accountingEntry.update({ where: { id }, data: { ...data, lines: { deleteMany: {}, create: data.lines.create } } })
+    : await db.accountingEntry.create({ data: { ...data, createdById: user.userId } });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "AccountingEntry", row.id);
   revalidatePath("/lancamentos"); revalidatePath("/");
 }
 
 export async function closePeriod(form: FormData) {
   const user = await requirePermission("closing.close");
-  const workId = text(form, "workId");
-  const competence = monthStart(`${text(form, "competence")}-01`);
+  const periodId = text(form, "periodId");
+  const period = periodId
+    ? await db.accountingPeriod.findUniqueOrThrow({ where: { id: periodId } })
+    : await db.accountingPeriod.findUniqueOrThrow({ where: { workId_competence: { workId: text(form, "workId"), competence: monthStart(`${text(form, "competence")}-01`) } } });
+  const workId = period.workId;
+  const competence = period.competence;
+  const currentCompetence = monthStart(businessToday());
+  if (period.status !== "OPEN" || competence >= currentCompetence) throw new Error("Somente uma competência vencida e aberta pode ser fechada.");
+  const earliest = await db.accountingPeriod.findFirst({ where: { workId, status: "OPEN" }, orderBy: { competence: "asc" } });
+  if (earliest?.id !== period.id) throw new Error("Feche primeiro a competência mais antiga desta obra.");
   const next = new Date(Date.UTC(competence.getUTCFullYear(), competence.getUTCMonth() + 1, 1));
   await db.$transaction(async (tx) => {
     const existing = await tx.accountingPeriod.findUnique({ where: { workId_competence: { workId, competence } } });
@@ -199,6 +312,12 @@ export async function closePeriod(form: FormData) {
       create: { workId, competence, status: "CLOSED", closedById: user.userId, closedAt: new Date() },
       update: { status: "CLOSED", closedById: user.userId, closedAt: new Date() },
     });
+    const otherOverdue = await tx.accountingPeriod.count({ where: { workId, status: "OPEN", competence: { lt: currentCompetence } } });
+    if (otherOverdue === 0) {
+      const current = await tx.accountingPeriod.findUnique({ where: { workId_competence: { workId, competence: currentCompetence } } });
+      if (!current) await tx.accountingPeriod.create({ data: { workId, competence: currentCompetence } });
+      else if (current.status === "CLOSED") throw new Error("A competência do mês vigente já está fechada.");
+    }
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   await audit(user.userId, "CLOSE", "AccountingPeriod", `${workId}:${competence.toISOString()}`);
   revalidatePath("/fechamentos");
@@ -227,10 +346,45 @@ export async function createSupplier(form: FormData) {
   await audit(user.userId, "CREATE", "Supplier", row.id); revalidatePath("/combustivel");
 }
 
+export async function saveFuelType(form: FormData) {
+  const user = await requirePermission("fuel.manage");
+  const id = optional(form, "id");
+  const data = {
+    name: text(form, "name"),
+    referencePrice: text(form, "referencePrice") ? decimal(form, "referencePrice") : null,
+    active: id ? text(form, "active") === "true" : true,
+  };
+  const row = id
+    ? await db.fuelType.update({ where: { id }, data })
+    : await db.fuelType.create({ data });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "FuelType", row.id);
+  revalidatePath("/combustivel");
+  revalidatePath("/equipamentos");
+}
+
+export async function deleteFuelType(form: FormData) {
+  const user = await requirePermission("fuel.manage");
+  const id = text(form, "id");
+  const [assets, purchases, dispenses] = await Promise.all([
+    db.asset.count({ where: { fuelTypeId: id } }),
+    db.fuelPurchase.count({ where: { fuelTypeId: id } }),
+    db.fuelDispense.count({ where: { fuelTypeId: id } }),
+  ]);
+  const referenced = assets + purchases + dispenses > 0;
+  if (referenced) await db.fuelType.update({ where: { id }, data: { active: false } });
+  else await db.fuelType.delete({ where: { id } });
+  await audit(user.userId, referenced ? "DEACTIVATE" : "DELETE", "FuelType", id);
+  revalidatePath("/combustivel");
+  revalidatePath("/equipamentos");
+}
+
 export async function createFuelPurchase(form: FormData) {
   const user = await requirePermission("fuel.manage");
-  const date = when(form, "date"); const competence = monthStart(date); const workId = text(form, "workId");
-  await assertOpen(workId, competence);
+  const date = when(form, "date"); const workId = text(form, "workId");
+  const competence = await assertOpen(workId, date);
+  const fuelTypeId = text(form, "fuelTypeId");
+  const fuelType = await db.fuelType.findFirst({ where: { id: fuelTypeId, active: true }, select: { id: true } });
+  if (!fuelType) throw new Error("Selecione um combustível ativo.");
   const liters = decimal(form, "liters"); const unitPrice = decimal(form, "unitPrice"); const total = liters.mul(unitPrice).toDecimalPlaces(2);
   const row = await db.$transaction(async (tx) => {
     const entry = await tx.accountingEntry.create({ data: {
@@ -243,7 +397,7 @@ export async function createFuelPurchase(form: FormData) {
     }});
     return tx.fuelPurchase.create({ data: {
       date, coupon: text(form, "coupon"), liters, unitPrice, total,
-      supplierId: text(form, "supplierId"), fuelTypeId: text(form, "fuelTypeId"), workId,
+      supplierId: text(form, "supplierId"), fuelTypeId, workId,
       entryId: entry.id, createdById: user.userId,
     }});
   });
@@ -253,10 +407,12 @@ export async function createFuelPurchase(form: FormData) {
 export async function createFuelDispense(form: FormData) {
   const user = await requirePermission("fuel.manage");
   const fuelTypeId = text(form, "fuelTypeId"); const liters = decimal(form, "liters");
-  const [purchases, dispenses] = await Promise.all([
+  const [fuelType, purchases, dispenses] = await Promise.all([
+    db.fuelType.findFirst({ where: { id: fuelTypeId, active: true }, select: { id: true } }),
     db.fuelPurchase.aggregate({ where: { fuelTypeId }, _sum: { liters: true } }),
     db.fuelDispense.aggregate({ where: { fuelTypeId }, _sum: { liters: true } }),
   ]);
+  if (!fuelType) throw new Error("Selecione um combustível ativo.");
   const available = (purchases._sum.liters ?? new Prisma.Decimal(0)).minus(dispenses._sum.liters ?? 0);
   if (liters.lte(0) || liters.gt(available)) throw new Error("Saldo de combustível insuficiente.");
   const row = await db.fuelDispense.create({ data: {

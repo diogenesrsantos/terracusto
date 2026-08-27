@@ -6,7 +6,7 @@ const items = [
   ["dashboard.view", "/", "Visão geral"], ["people.manage", "/pessoas", "Pessoas"],
   ["users.manage", "/usuarios", "Usuários"], ["works.manage", "/obras", "Obras"],
   ["assets.manage", "/equipamentos", "Equipamentos"], ["accounting.manage", "/plano-contas", "Plano de contas"],
-  ["accounting.manage", "/lancamentos", "Lançamentos"], ["closing.close", "/fechamentos", "Fechamentos"],
+  ["accounting.manage", "/lancamentos", "Centro de custos"], ["closing.close", "/fechamentos", "Fechamentos"],
   ["fuel.manage", "/combustivel", "Combustível"], ["stock.manage", "/almoxarifado", "Almoxarifado"],
   ["maintenance.manage", "/manutencao", "Manutenção"],
 ] as const;

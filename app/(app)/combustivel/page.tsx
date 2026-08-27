@@ -1,24 +1,27 @@
 import { createFuelDispense, createFuelPurchase, createSupplier } from "@/app/actions";
 import { Empty, PageHead } from "@/components/page";
+import { FuelTypeManager } from "@/components/fuel-type-manager";
 import { db } from "@/lib/db";
 import { money, number } from "@/lib/format";
 import { requirePermission } from "@/lib/auth";
 
 export default async function FuelPage() {
   await requirePermission("fuel.manage");
-  const [fuels, suppliers, works, assets, people, accounts, purchases, dispenses] = await Promise.all([
+  const [fuelTypes, suppliers, works, assets, people, accounts, purchases, dispenses] = await Promise.all([
     db.fuelType.findMany({ orderBy: { name: "asc" } }), db.supplier.findMany({ where: { active: true, isFuelStation: true }, orderBy: { name: "asc" } }),
-    db.work.findMany({ where: { active: true }, orderBy: { code: "asc" } }), db.asset.findMany({ where: { active: true, fuelTypeId: { not: null } }, orderBy: { identifier: "asc" } }),
+    db.work.findMany({ where: { active: true }, orderBy: { code: "asc" } }), db.asset.findMany({ where: { active: true, fuelType: { active: true } }, orderBy: { identifier: "asc" } }),
     db.person.findMany({ where: { active: true }, orderBy: { name: "asc" } }), db.account.findMany({ where: { active: true, analytic: true }, orderBy: { code: "asc" } }),
     db.fuelPurchase.findMany({ include: { supplier: true, fuelType: true, work: true }, orderBy: { date: "desc" }, take: 50 }),
     db.fuelDispense.findMany({ include: { fuelType: true, asset: true, work: true, person: true }, orderBy: { date: "desc" }, take: 50 }),
   ]);
+  const fuels = fuelTypes.filter((fuelType) => fuelType.active);
   const balances = await Promise.all(fuels.map(async (fuel) => {
     const [input, output] = await Promise.all([db.fuelPurchase.aggregate({ where: { fuelTypeId: fuel.id }, _sum: { liters: true } }), db.fuelDispense.aggregate({ where: { fuelTypeId: fuel.id }, _sum: { liters: true } })]);
     return { ...fuel, balance: Number(input._sum.liters || 0) - Number(output._sum.liters || 0) };
   }));
   return <><PageHead title="Combustível" subtitle="Compras, tanque próprio, abastecimentos e consumo da frota." />
-    <section className="grid grid-4">{balances.map((b) => <div className="card metric" key={b.id}><span>Saldo · {b.name}</span><strong>{number(b.balance, 3)} L</strong></div>)}</section>
+    <FuelTypeManager fuelTypes={fuelTypes.map((fuelType) => ({ id: fuelType.id, name: fuelType.name, referencePrice: fuelType.referencePrice?.toString() || null, active: fuelType.active }))} />
+    <section className="grid grid-4 mt">{balances.map((b) => <div className="card metric" key={b.id}><span>Saldo · {b.name}</span><strong>{number(b.balance, 3)} L</strong></div>)}</section>
     <section className="grid grid-2 mt"><div className="card"><h2>Novo posto</h2><form action={createSupplier} className="grid grid-2">
       <label className="field">Nome<input name="name" required /></label><label className="field">CNPJ/CPF<input name="document" /></label><button className="btn">Cadastrar posto</button>
     </form></div>

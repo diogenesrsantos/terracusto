@@ -1,0 +1,203 @@
+# Estado atual
+
+Registro da implantação inicial, validado em **26/08/2026**, no fuso
+`America/Bahia`.
+
+O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registra
+os módulos, fluxos, 27 modelos, ações, migrations, segurança, operação e limites
+conhecidos sem incluir segredos ou dados pessoais.
+
+## Código
+
+- Repositório local: `/home/diogenes/Desenvolvimento/Reflex/terracusto`
+- Branch consolidada: `feat/evolucoes-operacionais`
+- Commit inicial de referência: `66a7b027cc46bf8a1d9b0b9949e6177b37582f58`
+- Remoto esperado: `origin/feat/evolucoes-operacionais`; confirme o hash atual
+  com `git rev-parse HEAD` antes da próxima implantação
+- Árvore de trabalho esperada após a consolidação: limpa
+- Migration inicial: `prisma/migrations/20260826173814_init/migration.sql`
+
+### Cadastro estruturado de funções
+
+Em 26/08/2026 foi implantada a evolução do cadastro de funções. A migration
+`prisma/migrations/20260826181500_add_job_functions/migration.sql` preservou os
+textos antigos, criou o catálogo `JobFunction` e passou `Person` a referenciá-lo.
+A interface agora permite cadastrar funções e selecioná-las ao criar pessoas.
+Também permite listar 20 pessoas por página e carregar uma pessoa da listagem no
+formulário para alteração.
+
+Na seleção, a linha recebe destaque visual, o título muda para “Alteração de
+cadastro” e a ação principal muda para “Salvar cadastro”. A seleção também pode
+ser feita por teclado e há uma ação para cancelar a alteração. Depois de salvar
+uma alteração com sucesso, a seleção é limpa e o formulário retorna ao modo
+“Novo cadastro”.
+
+O código da obra passou a ser um número autoincrementável gerado pelo banco. A
+migration `20260826193000_autoincrement_work_code` converte ambientes com obras
+anteriores para uma sequência ordenada pela data de criação. Na produção não
+havia obras no momento da conferência pré-migração.
+
+Implantação validada em 26/08/2026: backup pré-migração
+`terracusto-20260826-170403.dump` (59.554 bytes), migration aplicada, build
+aprovado e serviço reiniciado. Uma pasta de migration vazia gerada durante a
+renomeação foi detectada pelo Prisma antes de qualquer alteração no banco e
+removida; somente a migration final `20260826193000_autoincrement_work_code`
+compõe o histórico válido.
+
+O tipo de equipamento também passou de uma lista fixa no código para o catálogo
+`EquipmentType`. A migration `20260826203000_add_equipment_types` preserva o
+tipo de todos os ativos existentes e cria os tipos iniciais Máquina, Veículo,
+Ferramenta e Outro.
+
+Implantação validada em 26/08/2026: backup pré-migração
+`terracusto-20260826-172757.dump` (60.850 bytes), migration e seed aplicados,
+build aprovado, serviço ativo e health check com banco `ok`. A conferência final
+encontrou sete tipos ativos: os quatro iniciais e três tipos operacionais já
+cadastrados; não havia duplicidades.
+
+Na tela de lançamentos, os rótulos dos campos contábeis foram ajustados para
+“Conta devedora” e “Conta credora”, preservando internamente as linhas de débito
+e crédito já existentes.
+
+O módulo da rota `/lancamentos` é apresentado como “Centro de custos” no título
+da página e no menu lateral. A rota e a estrutura contábil permanecem iguais.
+
+A tela de combustível passou a oferecer CRUD dos tipos de combustível, incluindo
+preço de referência, edição, ativação/inativação e exclusão segura. A migration
+`20260826213000_add_fuel_type_active` adiciona o controle de situação sem alterar
+os registros existentes.
+
+Implantação validada em 26/08/2026: backup pré-migração
+`terracusto-20260826-181554.dump` (63.167 bytes), cinco migrations aplicadas,
+build aprovado, serviço ativo, health check com banco `ok` e componente do CRUD
+presente no artefato publicado.
+
+O Centro de custos passou a trabalhar com competência operacional por obra. A
+obra padrão é persistida no navegador, a data fica limitada ao mês vigente e ao
+dia atual, e competências vencidas bloqueiam lançamentos até o fechamento. O
+fechamento da última pendência abre o mês vigente. A migration
+`20260826223000_backfill_accounting_periods` cria períodos abertos para
+competências de lançamentos legados que ainda não possuíam controle explícito.
+
+Implantação validada em 26/08/2026: backup pré-migração
+`terracusto-20260826-184021.dump` (63.316 bytes), seis migrations aplicadas,
+build aprovado, serviço ativo e health check com banco `ok`. A conversão não
+encontrou lançamentos legados sem período: ao final havia zero competências
+abertas e zero vencidas; novas obras passam a criar a competência vigente no
+próprio cadastro.
+
+O Centro de custos também possui cadastro flexível de tipos de lançamento. Cada
+tipo define contas padrão sem impedir ajustes manuais. A migration
+`20260826233000_add_entry_types` transforma `3.1` em Serviços sintética, cria
+Serviços de máquinas, Despesas reembolsáveis, Reembolso de alimentação e
+Alimentação, migra eventuais linhas antigas de `3.1` para `3.1.1` e cria os três
+tipos iniciais.
+
+Implantação validada em 26/08/2026: backup pré-migração
+`terracusto-20260826-200722.dump` (63.603 bytes), sete migrations aplicadas,
+cinco contas novas/reestruturadas conferidas, três tipos ativos, build aprovado,
+serviço ativo e health check com banco `ok`.
+
+O cadastro de uma nova conta analítica passou a invalidar também as telas de
+Centro de custos e Combustível. Isso garante que contas recém-criadas apareçam
+imediatamente nos seletores de contas padrão e nos lançamentos.
+
+Contas analíticas criadas diretamente sob Serviços ou Despesas reembolsáveis
+também passam a gerar automaticamente o respectivo tipo de lançamento. A
+migration `20260827001000_sync_service_entry_types` cria os vínculos faltantes
+para contas já existentes, incluindo `3.1.2 — Terraplenagem com trator`.
+
+Implantação validada em 26/08/2026: backup
+`terracusto-20260826-205133.dump` (68.520 bytes), oito migrations aplicadas e o
+tipo “Terraplenagem com trator” confirmado como ativo, com devedora `1.2` e
+credora `3.1.2`. Build, serviço e health check aprovados.
+
+O fluxo de lançamentos em grupo do Centro de custos preserva os campos do grupo
+após cada gravação e limpa apenas valor cobrado, hora de início e hora final.
+Os horários passaram a ser informados como hora, sem campos adicionais de data.
+A tela também lista até 20 lançamentos por página, filtrados pela obra
+selecionada, e permite carregar uma linha no formulário para alteração. A
+alteração valida as competências original e de destino, atualiza as partidas
+balanceadas e retorna o formulário ao modo de novo lançamento.
+
+Implantação validada em 26/08/2026: backup
+`terracusto-20260826-212050.dump` (69.271 bytes), oito migrations sem
+pendências, typecheck e builds local/remoto aprovados, serviço ativo desde
+21:30 -03 e health check com aplicação e banco `ok`. O artefato publicado foi
+conferido para os novos horários e para a listagem por obra. O domínio público
+continuou respondendo HTTP 307 para `/login`, conforme esperado sem sessão.
+
+As evoluções posteriores a `66a7b02` foram consolidadas na branch
+`feat/evolucoes-operacionais`, permitindo que o conteúdo implantado volte a ser
+rastreado pelo histórico do Git.
+
+## Produção
+
+| Item | Valor confirmado |
+| --- | --- |
+| URL pública | `https://terracusto.provizi.net.br` |
+| Servidor | `provizi.net.br` / VPS `191.252.178.248` |
+| Diretório | `/var/www/terracusto` |
+| Usuário do processo | `terracusto` |
+| Serviço | `terracusto.service` |
+| Porta interna | `3120` |
+| Ambiente | `/etc/terracusto.env` |
+| Credenciais iniciais | `/root/terracusto-credentials.txt` |
+| Banco | PostgreSQL, base `terracusto` |
+| Proxy | Nginx |
+| Certificado | Let's Encrypt ECDSA |
+| Expiração observada | 24/11/2026 às 16:44:13 UTC |
+| Backup | `/var/backups/terracusto` |
+| Timer | `terracusto-backup.timer`, diariamente às 02:30 + atraso aleatório de até 15 min |
+| Retenção | 14 dias completos; arquivos com mais de 14 dias são removidos |
+
+Os arquivos de ambiente e credenciais existem na VPS, mas seus conteúdos não
+foram copiados para esta documentação.
+
+## Evidências da validação
+
+- `terracusto.service`: `active (running)` e habilitado para reinício automático.
+- `GET http://127.0.0.1:3120/api/health`: HTTP 200, aplicação `ok` e banco `ok`.
+- `HEAD https://terracusto.provizi.net.br/`: HTTP/2 307 para `/login`.
+- Cabeçalhos de segurança presentes no domínio público.
+- `terracusto-backup.timer`: `enabled` e `active`; próxima execução observada em
+  27/08/2026 às 02:32:28 -03.
+- `nginx -t`: sintaxe e configuração válidas.
+- Certificado específico de `terracusto.provizi.net.br`: válido.
+
+### Validação da evolução de funções
+
+- Backup pré-migração: `terracusto-20260826-151841.dump`, 56.636 bytes.
+- `20260826181500_add_job_functions`: aplicada com sucesso.
+- Seed: concluído, incluindo as cinco funções iniciais.
+- Build de produção: aprovado, incluindo a rota dinâmica `/pessoas`.
+- `terracusto.service`: reiniciado e ativo.
+- Health check interno: aplicação `ok` e banco `ok`.
+- Domínio público: HTTP 307 para `/login`, conforme esperado sem sessão.
+- Evolução de paginação/edição: typecheck e build aprovados; componente
+  `people-manager` sincronizado, serviço ativo e health check aprovado após o
+  deploy de 26/08/2026 às 15:45 -03.
+- Smoke test: login não executado porque a senha atual do administrador difere
+  de `ADMIN_PASSWORD`. Isso indica troca da senha inicial; ela foi preservada e
+  não foi redefinida. As demais verificações foram executadas separadamente.
+
+O teste do Nginx mostrou avisos de `protocol options redefined` em configurações
+de outros hosts (`movapi.provizi.net.br` e `provizi`). Eles não impediram o teste
+nem o funcionamento do TerraCusto, mas devem ser tratados ao revisar a
+configuração global do Nginx.
+
+## Base para a próxima alteração
+
+Antes de começar:
+
+1. Confirme `git status --short` e a branch ativa.
+2. Compare o commit em produção com o commit que será implantado.
+3. Leia os limites conhecidos em `docs/ARQUITETURA.md`.
+4. Se houver mudança de schema, crie e revise uma migration e faça backup antes
+   de aplicá-la.
+5. Execute `npm run typecheck`, `npm run build` e o smoke test.
+6. Depois do deploy, atualize este documento com data, branch, commit, migration
+   e resultados de validação.
+
+Este arquivo é um retrato, não uma fonte dinâmica. Sempre confirme o estado real
+da VPS antes de uma intervenção.
