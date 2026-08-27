@@ -32,6 +32,17 @@ health check com aplicação e banco `ok`. O domínio público respondeu HTTP 30
 para `/login`, com os cabeçalhos de segurança, e o timer de backup permaneceu
 ativo.
 
+Em 27/08/2026, o relatório de centro de custos foi disponibilizado em
+`/relatorios/centro-custos`. Ele permite selecionar uma obra ativa, uma ou mais
+competências e os formatos resumido ou detalhado, com impressão e cabeçalho
+institucional.
+
+Implantação validada em 27/08/2026: commit `2459f7d`, build remoto aprovado com
+23 rotas, serviço ativo desde 15:38 -03 e health check com aplicação e banco
+`ok`. A rota do relatório redirecionou usuários sem sessão para `/login`, o
+domínio público respondeu HTTP 307 e o timer de backup permaneceu ativo. Não
+houve alteração de schema nesta implantação.
+
 Em 27/08/2026, a listagem do Plano de contas foi convertida em TreeView. Contas
 sintéticas possuem ícone de pasta e controles de expansão; contas analíticas
 possuem ícone de documento. A árvore respeita `Account.parentId`, inicia
