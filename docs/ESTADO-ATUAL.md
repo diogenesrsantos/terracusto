@@ -7,6 +7,70 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 27 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
+Em 27/08/2026, a listagem do Plano de contas foi convertida em TreeView. Contas
+sintéticas possuem ícone de pasta e controles de expansão; contas analíticas
+possuem ícone de documento. A árvore respeita `Account.parentId`, inicia
+contraída, permite expandir/contrair todos os grupos e inclui semântica ARIA e
+adaptação responsiva. A alteração é somente de apresentação e não modifica o
+banco.
+
+Implantação validada em 27/08/2026: oito migrations sem pendências, builds
+local/remoto aprovados, serviço ativo desde 08:41 -03 e health check com
+aplicação e banco `ok`. O artefato publicado contém os controles do TreeView e
+sua semântica ARIA. O domínio público respondeu HTTP 307 para `/login`, como
+esperado sem sessão. Não foi necessário backup específico porque não houve
+alteração de schema nem escrita de dados durante a implantação.
+
+Na evolução seguinte, a árvore passou a iniciar completamente contraída e cada
+linha recebeu a ação “Editar”. O formulário de alteração permite modificar nome
+e conta superior, preserva código, natureza e tipo e rejeita uma conta superior
+analítica ou qualquer vínculo que forme ciclo na hierarquia. A escrita usa
+`saveAccount`, exige `accounting.manage`, registra `UPDATE` na auditoria e
+invalida as telas que exibem nomes de contas.
+
+Implantação validada em 27/08/2026: oito migrations sem pendências, builds
+local/remoto aprovados, serviço ativo desde 09:06 -03 e health check com
+aplicação e banco `ok`. O artefato contém o formulário de alteração e a
+validação contra ciclos. Nenhuma conta foi modificada durante o deploy e não foi
+necessário backup específico, pois não houve alteração de schema nem escrita
+automática de dados.
+
+Em 27/08/2026, o menu lateral foi reorganizado em submenus expansíveis:
+Cadastros, Contabilidade e Operacional. Visão geral permanece como item direto.
+O servidor filtra cada subitem pelas permissões do usuário e omite grupos
+vazios; o componente cliente abre o grupo da rota atual, destaca o subitem
+ativo, permite expansão independente e usa `aria-expanded` e `aria-controls`.
+Em telas menores, a navegação mantém uma coluna para preservar a leitura dos
+grupos.
+
+Implantação validada em 27/08/2026: oito migrations sem pendências, builds
+local/remoto aprovados, serviço ativo desde 09:28 -03 e health check com
+aplicação e banco `ok`. O artefato publicado contém os três grupos e os
+controles dos submenus. A mudança não altera schema nem dados e não exigiu
+backup específico.
+
+Em 27/08/2026, “Novo tipo de lançamento” e “Tipos cadastrados” foram removidos
+do Centro de custos e transferidos para a rota exclusiva
+`/tipos-lancamento`. O submenu Contabilidade passou a apresentar Plano de
+contas, Tipos de lançamento, Centro de custos e Fechamentos nessa ordem. As
+ações, permissões, validações e dados de `EntryType` foram preservados; somente
+a organização das telas e consultas foi alterada.
+
+Implantação validada em 27/08/2026: oito migrations sem pendências, builds
+local/remoto aprovados, 19 rotas geradas, serviço ativo desde 09:40 -03 e health
+check com aplicação e banco `ok`. O artefato contém a nova página e seu subitem
+de menu. Nenhum dado foi alterado e não foi necessário backup específico.
+
+Em 27/08/2026, o campo Histórico do Centro de custos deixou de ser obrigatório
+em novos lançamentos e alterações. Quando não informado, o banco preserva sua
+coluna obrigatória armazenando texto vazio. Históricos automáticos de compras de
+combustível não foram alterados.
+
+Implantação validada em 27/08/2026: builds local/remoto aprovados, 19 rotas
+geradas, serviço ativo desde 09:48 -03 e health check com aplicação e banco
+`ok`. O artefato publicado identifica Histórico como opcional. Não houve
+alteração de schema nem de dados durante o deploy.
+
 ## Código
 
 - Repositório local: `/home/diogenes/Desenvolvimento/Reflex/terracusto`

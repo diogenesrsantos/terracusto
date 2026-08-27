@@ -35,7 +35,8 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/obras` | Obras | `works.manage` | Cadastro e listagem de obras/centros de custo |
 | `/equipamentos` | Equipamentos | `assets.manage` | Cadastro de tipos e equipamentos/ativos |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
-| `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, tipos personalizados, paginação, filtro por obra e edição |
+| `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Cadastro, edição, situação, exclusão e contas padrão dos tipos |
+| `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtro por obra e edição |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento de competências vencidas e balancete |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura mediante senha e justificativa |
 | `/combustivel` | Combustível | `fuel.manage` | Tipos de combustível, postos, compras, saldo do tanque e abastecimentos |
@@ -47,6 +48,14 @@ clientes nem conteúdo das variáveis de ambiente.
 
 O menu lateral só mostra módulos permitidos ao usuário. A autorização é
 repetida no servidor em todas as páginas protegidas e ações de escrita.
+
+A navegação é agrupada em submenus expansíveis: Cadastros reúne Pessoas,
+Usuários e acessos, Obras e Equipamentos; Contabilidade reúne Plano de contas,
+Tipos de lançamento, Centro de custos e Fechamentos; Operacional reúne
+Combustível, Almoxarifado e Manutenção. Visão geral é um item direto. O grupo da rota atual abre
+automaticamente, o subitem recebe destaque e os gatilhos são acessíveis por
+teclado e tecnologias assistivas. Grupos sem nenhum item permitido são
+omitidos.
 
 ## Fluxos e regras por módulo
 
@@ -88,11 +97,22 @@ repetida no servidor em todas as páginas protegidas e ações de escrita.
 
 - Conta possui código único, nome, natureza devedora/credora, classificação
   sintética/analítica, situação e conta superior opcional.
+- A listagem usa um TreeView construído pelos vínculos `parentId`. Conta
+  sintética é representada por pasta dourada e pode expandir/contrair seus
+  descendentes; conta analítica usa documento verde. Todos os grupos começam
+  contraídos e podem ser controlados em conjunto por “Expandir tudo” e
+  “Contrair tudo”. A estrutura possui semântica acessível de árvore.
+- A ação “Editar” permite alterar nome e conta superior. Código, natureza e tipo
+  permanecem bloqueados para proteger a classificação contábil. Contas
+  analíticas só podem pertencer a grupos sintéticos, e nenhuma conta pode ser
+  colocada dentro dela mesma ou de suas descendentes.
 - Somente contas analíticas, ativas e distintas podem ser usadas nas partidas
   criadas pelo Centro de custos.
 - Tipo de lançamento é um cadastro livre com nome único, situação e contas
   devedora e credora padrão. As contas são sugeridas ao selecionar o tipo, mas
   podem ser trocadas no lançamento.
+- A manutenção dos tipos utiliza uma página contábil própria. Isso mantém o
+  Centro de custos dedicado à rotina frequente de lançar e consultar registros.
 - Tipo sem uso pode ser excluído. Se já foi usado, a exclusão solicitada apenas
   o desativa para preservar o histórico.
 - Ao cadastrar uma conta analítica diretamente sob `3.1 — Serviços` ou
@@ -109,8 +129,9 @@ repetida no servidor em todas as páginas protegidas e ações de escrita.
 
 - Cada lançamento pertence a uma obra e a um tipo ativo e gera exatamente duas
   linhas de mesmo valor: uma de débito e uma de crédito.
-- Campos: obra, competência exibida, data, tipo, histórico, documento, contas,
-  valor, equipamento opcional, pessoa opcional, hora inicial e hora final.
+- Campos: obra, competência exibida, data, tipo, histórico opcional, documento,
+  contas, valor, equipamento opcional, pessoa opcional, hora inicial e hora
+  final.
 - A obra selecionada é persistida no navegador na chave
   `terracusto.defaultWorkId` e também fica na URL como `workId`.
 - Para lançamentos em grupo, após criar ou alterar um registro o formulário
@@ -238,7 +259,7 @@ Valores monetários e quantitativos usam `Decimal`; identificadores internos usa
 | `users.manage` | `createUser` e `createRole` |
 | `works.manage` | `createWork`, incluindo a competência inicial |
 | `assets.manage` | `createEquipmentType` e `createAsset` |
-| `accounting.manage` | `createAccount`, `saveEntryType`, `deleteEntryType` e `saveEntry` |
+| `accounting.manage` | `saveAccount`, `saveEntryType`, `deleteEntryType` e `saveEntry` |
 | `closing.close` | `closePeriod` |
 | `closing.reopen` | `reopenPeriod` |
 | `fuel.manage` | `createSupplier`, `saveFuelType`, `deleteFuelType`, `createFuelPurchase` e `createFuelDispense` |

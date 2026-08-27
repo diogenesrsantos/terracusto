@@ -138,16 +138,30 @@ export async function createAsset(form: FormData) {
   revalidatePath("/equipamentos");
 }
 
-export async function createAccount(form: FormData) {
+export async function saveAccount(form: FormData) {
   const user = await requirePermission("accounting.manage");
+  const id = optional(form, "id");
   const parentId = optional(form, "parentId");
-  const row = await db.account.create({ data: {
-    code: text(form, "code"), name: text(form, "name"),
-    nature: text(form, "nature") as "DEBIT" | "CREDIT", analytic: text(form, "analytic") === "true",
-    parentId,
-  }});
-  await audit(user.userId, "CREATE", "Account", row.id);
-  if (row.analytic && parentId) {
+  if (parentId) {
+    const accounts = await db.account.findMany({ select: { id: true, parentId: true, analytic: true } });
+    const parent = accounts.find((account) => account.id === parentId);
+    if (!parent || parent.analytic) throw new Error("A conta superior deve ser sintética.");
+    const parents = new Map(accounts.map((account) => [account.id, account.parentId]));
+    let cursor: string | null = parentId;
+    while (cursor) {
+      if (cursor === id) throw new Error("Uma conta não pode pertencer a ela mesma ou a uma de suas contas descendentes.");
+      cursor = parents.get(cursor) || null;
+    }
+  }
+  const row = id
+    ? await db.account.update({ where: { id }, data: { name: text(form, "name"), parentId } })
+    : await db.account.create({ data: {
+      code: text(form, "code"), name: text(form, "name"),
+      nature: text(form, "nature") as "DEBIT" | "CREDIT", analytic: text(form, "analytic") === "true",
+      parentId,
+    }});
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "Account", row.id);
+  if (!id && row.analytic && parentId) {
     const [parent, clients] = await Promise.all([
       db.account.findUnique({ where: { id: parentId }, select: { code: true } }),
       db.account.findUnique({ where: { code: "1.2" }, select: { id: true } }),
@@ -161,8 +175,10 @@ export async function createAccount(form: FormData) {
     }
   }
   revalidatePath("/plano-contas");
+  revalidatePath("/tipos-lancamento");
   revalidatePath("/lancamentos");
   revalidatePath("/combustivel");
+  redirect("/plano-contas");
 }
 
 export async function saveEntryType(form: FormData) {
@@ -184,6 +200,7 @@ export async function saveEntryType(form: FormData) {
     ? await db.entryType.update({ where: { id }, data })
     : await db.entryType.create({ data });
   await audit(user.userId, id ? "UPDATE" : "CREATE", "EntryType", row.id);
+  revalidatePath("/tipos-lancamento");
   revalidatePath("/lancamentos");
 }
 
@@ -194,6 +211,7 @@ export async function deleteEntryType(form: FormData) {
   if (used) await db.entryType.update({ where: { id }, data: { active: false } });
   else await db.entryType.delete({ where: { id } });
   await audit(user.userId, used ? "DEACTIVATE" : "DELETE", "EntryType", id);
+  revalidatePath("/tipos-lancamento");
   revalidatePath("/lancamentos");
 }
 

@@ -1,6 +1,5 @@
 import { PageHead } from "@/components/page";
 import { CostCenterEntryForm, type CostCenterEntryItem } from "@/components/cost-center-entry-form";
-import { EntryTypeManager } from "@/components/entry-type-manager";
 import { db } from "@/lib/db";
 import { businessToday, dateInput, monthStart, number, timeInput } from "@/lib/format";
 import { requirePermission } from "@/lib/auth";
@@ -18,7 +17,7 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
     db.person.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     db.asset.findMany({ where: { active: true }, orderBy: { identifier: "asc" } }),
     db.accountingPeriod.findMany({ where: { status: "OPEN", work: { active: true } }, orderBy: { competence: "asc" } }),
-    db.entryType.findMany({ include: { defaultDebitAccount: true, defaultCreditAccount: true }, orderBy: { name: "asc" } }),
+    db.entryType.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
 
   const selectedWorkId = works.some((work) => work.id === params.workId) ? params.workId! : "";
@@ -74,18 +73,11 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
       accounts={accountOptions}
       people={people.map((person) => ({ id: person.id, label: person.name }))}
       assets={assets.map((asset) => ({ id: asset.id, label: `${asset.identifier} — ${asset.description}` }))}
-      entryTypes={entryTypes.filter((entryType) => entryType.active).map((entryType) => ({
+      entryTypes={entryTypes.map((entryType) => ({
         id: entryType.id, label: entryType.name,
         defaultDebitAccountId: entryType.defaultDebitAccountId,
         defaultCreditAccountId: entryType.defaultCreditAccountId,
       }))}
     />
-    <div className="mt"><EntryTypeManager accounts={accountOptions} entryTypes={entryTypes.map((entryType) => ({
-      id: entryType.id, name: entryType.name, active: entryType.active,
-      defaultDebitAccountId: entryType.defaultDebitAccountId,
-      defaultCreditAccountId: entryType.defaultCreditAccountId,
-      defaultDebitAccountLabel: `${entryType.defaultDebitAccount.code} — ${entryType.defaultDebitAccount.name}`,
-      defaultCreditAccountLabel: `${entryType.defaultCreditAccount.code} — ${entryType.defaultCreditAccount.name}`,
-    }))} /></div>
   </>;
 }

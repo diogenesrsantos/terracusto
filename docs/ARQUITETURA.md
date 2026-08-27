@@ -40,6 +40,22 @@ Next.js :3120 ── Prisma Client ── PostgreSQL
 | `deployment` | Nginx, systemd, backup e manual operacional |
 | `scripts/smoke.mjs` | Teste ponta a ponta mínimo |
 
+`components/account-tree-view.tsx` monta no cliente a árvore do plano de contas
+a partir de `parentId`. Os grupos sintéticos começam contraídos, mantêm o estado
+de abertura localmente e expõem semântica ARIA de `tree`, `treeitem` e `group`.
+Os ícones são SVGs locais, sem biblioteca ou recurso externo.
+
+`components/sidebar-nav.tsx` recebe do layout somente os itens autorizados pelo
+servidor. No cliente, usa a rota atual para destacar o item e abrir seu grupo e
+mantém o estado dos demais submenus localmente. Os gatilhos publicam
+`aria-expanded`/`aria-controls`; a autorização real continua nas páginas e nas
+Server Actions, não no componente visual.
+
+A edição de `Account` aceita somente `name` e `parentId`; código, natureza e
+classificação não são alterados por esse fluxo. Antes da atualização,
+`saveAccount` confirma que a conta superior é sintética e percorre seus
+ancestrais para impedir ciclos na árvore.
+
 ## Domínios de dados
 
 O schema possui 27 modelos, agrupados assim:

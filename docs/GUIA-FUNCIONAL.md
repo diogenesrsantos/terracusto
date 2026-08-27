@@ -10,6 +10,7 @@
 | `/obras` | Obras | `works.manage` | Cadastro de centros de custo/obras |
 | `/equipamentos` | Equipamentos | `assets.manage` | Tipos de equipamento e cadastro de ativos |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
+| `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Configuração das contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento e balancete mensal |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura com senha e justificativa |
@@ -20,6 +21,18 @@
 
 Usuários sem sessão são redirecionados para `/login`. Usuários autenticados sem
 a permissão exigida são redirecionados para `/sem-permissao`.
+
+O menu lateral possui submenus expansíveis e mostra somente opções autorizadas:
+
+- **Cadastros:** Pessoas, Usuários e acessos, Obras e Equipamentos;
+- **Contabilidade:** Plano de contas, Tipos de lançamento, Centro de custos e
+  Fechamentos;
+- **Operacional:** Combustível, Almoxarifado e Manutenção.
+
+“Visão geral” permanece como acesso direto. Ao entrar em uma página, o grupo
+correspondente abre automaticamente e destaca o subitem atual. Cada grupo pode
+ser expandido ou contraído pelo clique e expõe seu estado para tecnologias
+assistivas.
 
 ## Perfis iniciais
 
@@ -40,6 +53,9 @@ perfis, mas não editar, desativar ou excluir cadastros existentes.
 - Tipos de lançamento possuem cadastro livre, situação e contas devedora e
   credora padrão. Ao selecionar um tipo, as contas são preenchidas
   automaticamente, mas continuam editáveis no lançamento.
+- O cadastro, a listagem e a manutenção dos tipos ficam na página exclusiva
+  `/tipos-lancamento`. O Centro de custos contém somente o fluxo operacional de
+  lançamento e sua listagem por obra.
 - Tipos já utilizados são desativados em vez de apagados, preservando o
   histórico. Tipos sem utilização podem ser excluídos definitivamente.
 - Ao criar uma conta analítica diretamente sob `3.1 — Serviços` ou
@@ -60,6 +76,17 @@ perfis, mas não editar, desativar ou excluir cadastros existentes.
 - Na interface de lançamentos, essas posições são apresentadas como “Conta
   devedora” e “Conta credora”, respectivamente.
 - Somente contas analíticas, ativas e distintas podem receber lançamentos.
+- O campo Histórico é opcional nos lançamentos do Centro de custos, tanto no
+  cadastro quanto na alteração.
+- A listagem do plano de contas é exibida como uma árvore hierárquica. Contas
+  sintéticas usam ícone de pasta e funcionam como grupos que podem ser
+  expandidos ou contraídos; contas analíticas usam ícone de documento. A tela
+  inicia com todos os grupos contraídos e também oferece as ações “Expandir
+  tudo” e “Contrair tudo”.
+- Cada conta possui a ação “Editar”. A alteração permite mudar o nome e a conta
+  superior, mantendo código, natureza e classificação sintética/analítica. O
+  sistema impede que uma conta seja movida para dentro dela mesma ou de uma de
+  suas descendentes.
 - A competência é o primeiro dia UTC do mês da data informada.
 - Hora de início e hora final são opcionais e não exigem repetir a data. Quando
   informadas, ambas são obrigatórias, geram a quantidade de horas e a hora
