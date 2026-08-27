@@ -103,6 +103,12 @@ binário com `nosniff`; uploads aceitam somente PNG, JPEG e WebP, limitados a 2
 MB. `components/report-header.tsx` centraliza o cabeçalho imprimível e mantém a
 imagem à esquerda.
 
+`/relatorios/centro-custos` é uma página autenticada por `accounting.manage` e
+consulta lançamentos por obra ativa e competência. O modo resumido agrega
+quantidade, horas e valor no servidor; o modo detalhado exibe lançamentos,
+contas, horários e totais. A impressão usa CSS específico para remover filtros,
+menu e ações, preservando o cabeçalho institucional.
+
 ## Autenticação e autorização
 
 - A autenticação usa e-mail e senha com `bcrypt`, custo 12.

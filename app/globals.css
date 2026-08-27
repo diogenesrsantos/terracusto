@@ -109,6 +109,28 @@ tbody tr:hover { background: #f8faf8; }
 .report-company { display: grid; gap: .2rem; min-width: 0; font-size: .78rem; }
 .report-company strong { font-size: 1.05rem; }
 .report-header h1 { margin: 0; font-size: 1.35rem; text-align: right; }
+.report-sheet { margin-top: 1rem; padding: 1.5rem; background: white; border: 1px solid var(--line); box-shadow: var(--shadow); }
+.report-actions { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
+.report-meta { margin: 1rem 0 1.5rem; padding: .75rem; background: #f7f9f7; border-left: 3px solid var(--brand); line-height: 1.65; }
+.report-sheet h2 { margin: 1.5rem 0 .7rem; font-size: 1.05rem; }
+.report-sheet tfoot { border-top: 2px solid var(--ink); }
+.report-sheet tfoot th { color: var(--ink); }
+.report-footer { margin: 1.5rem 0 0; color: var(--muted); font-size: .78rem; text-align: right; }
+.report-competences { min-width: 0; margin: 0; padding: .8rem; border: 1px solid var(--line); border-radius: 8px; }
+.report-competences legend { padding: 0 .35rem; color: #3e504a; font-size: .84rem; font-weight: 650; }
+.report-competence-list { display: flex; flex-wrap: wrap; gap: .7rem 1.25rem; }
+.report-competence-list label { display: flex; align-items: center; gap: .35rem; font-size: .9rem; }
+@media print {
+  @page { margin: 12mm; }
+  body { background: white; }
+  .no-print, .sidebar { display: none !important; }
+  .app-shell { display: block; }
+  .main { padding: 0; }
+  .report-sheet { margin: 0; padding: 0; border: 0; box-shadow: none; }
+  .report-sheet .table-wrap { overflow: visible; }
+  .report-sheet table { font-size: 9pt; }
+  .report-sheet tr { break-inside: avoid; }
+}
 @media print {
   .report-header { break-inside: avoid; }
   .report-image-slot { border: 0; background: transparent; }

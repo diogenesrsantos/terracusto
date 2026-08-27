@@ -14,6 +14,7 @@
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Configuração das contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
+| `/relatorios/centro-custos` | Relatório de centro de custos | `accounting.manage` | Resumo ou detalhamento por obra e competência, com impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento e balancete mensal |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura com senha e justificativa |
 | `/combustivel` | Combustível | `fuel.manage` | Fornecedores, compras, tanque e abastecimentos |
@@ -76,6 +77,11 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 - A imagem só é entregue a usuários autenticados. O cabeçalho padrão dos
   relatórios posiciona a imagem à esquerda, os dados da empresa ao centro e o
   título à direita, com adaptação para impressão e telas menores.
+- O relatório de centro de custos permite escolher uma obra ativa, uma ou várias
+  competências disponíveis e o formato resumido ou detalhado. O resumo agrupa
+  quantidade de lançamentos, horas e valor por competência; o detalhado lista
+  cada lançamento, horários, contas e valor. O botão de impressão oculta os
+  filtros e a navegação.
 - A edição de equipamento permite alterar tipo, identificador, descrição,
   marca, modelo, combustível e consumo esperado.
 

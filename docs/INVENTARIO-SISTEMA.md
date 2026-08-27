@@ -39,6 +39,7 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Cadastro, edição, situação, exclusão e contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtro por obra e edição |
+| `/relatorios/centro-custos` | Relatório de centro de custos | `accounting.manage` | Seleção de obra/competências, resumo, detalhamento e impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento de competências vencidas e balancete |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura mediante senha e justificativa |
 | `/combustivel` | Combustível | `fuel.manage` | Tipos, fornecedores, compras, saldo do tanque e abastecimentos |
@@ -225,6 +226,12 @@ omitidos.
   cancelada, mas a interface ainda não opera todos esses estados.
 - O banco prevê peças e custos por ordem, mas a interface ainda não cadastra
   peças nem gera baixa automática no almoxarifado.
+
+O relatório de centro de custos consulta somente obras ativas e competências que
+possuem lançamentos. O modo resumido soma quantidade, horas e valores por
+competência; o detalhado apresenta cada lançamento e seus dois períodos de
+horário quando existentes. O cabeçalho usa `ReportHeader` e a imagem armazenada
+em `SystemSettings`.
 
 ## Modelo de dados
 
