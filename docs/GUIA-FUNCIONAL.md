@@ -139,6 +139,8 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 - O formulário organiza obra e competência na primeira linha; equipamento e
   operador na segunda; data, os dois períodos e o total de horas na terceira;
   histórico, documento e valor na quarta; tipo e contas na quinta.
+- Para facilitar a leitura, essas linhas são separadas visualmente em três
+  grupos: Obra e equipe; Jornada e valores; Classificação contábil.
 - A listagem do Centro de custos mostra somente os lançamentos da obra
   selecionada, em páginas de até 20 registros. Ao clicar ou usar Enter/Espaço
   em uma linha, o lançamento é carregado para edição. Os controles Anterior e

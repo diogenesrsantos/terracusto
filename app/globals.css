@@ -52,6 +52,10 @@ button { cursor: pointer; }
 .inline-checkbox { width: auto; margin-right: .4rem; }
 .elapsed-hours { color: #1769aa; font-size: .82rem; font-weight: 750; }
 .entry-row { display: grid; gap: .8rem; align-items: end; }
+.entry-group { min-width: 0; margin: 0; padding: 1rem; border: 1px solid #cddbd4; border-radius: 11px; background: #fbfcfb; }
+.entry-group legend { padding: 0 .45rem; color: var(--brand-dark); font-size: .86rem; font-weight: 800; }
+.entry-group > .entry-row + .entry-row { margin-top: .8rem; }
+.entry-group > .form-actions { margin-top: .9rem; }
 .entry-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .entry-row-hours { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .entry-row-history { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); }

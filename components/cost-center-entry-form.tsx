@@ -207,17 +207,17 @@ export function CostCenterEntryForm({
 
   return <><section className="card"><h2>{editing ? "Alteração de lançamento" : "Novo lançamento"}</h2><form action={submitEntry} className="form-grid">
     <input type="hidden" name="id" value={editing?.id || ""} />
-    <div className="entry-row entry-row-2 span-4">
-      <label className="field">Obra<select name="workId" required value={workId} onChange={(event) => selectWork(event.target.value)}><option value="">Selecione</option>{works.map((work) => <option key={work.id} value={work.id}>{work.label}</option>)}</select></label>
-      <label className="field">Competência<input value={selectedWork?.competence.slice(0, 7) || ""} placeholder="Selecione a obra" readOnly /></label>
-    </div>
-    {selectedWork?.blocked && <p className="error span-4">A competência desta obra venceu. <Link href="/fechamentos"><strong>Feche a competência pendente</strong></Link> para liberar o mês vigente.</p>}
-    <fieldset className="form-grid span-4" disabled={!selectedWork || selectedWork.blocked}>
-      <div className="entry-row entry-row-2 span-4">
-        <label className="field">Equipamento<select name="assetId" value={assetId} onChange={(event) => setAssetId(event.target.value)}><option value="">Não se aplica</option>{assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.label}</option>)}</select></label>
-        <label className="field">Operador/motorista<select name="personId" value={personId} onChange={(event) => setPersonId(event.target.value)}><option value="">Não se aplica</option>{people.map((person) => <option key={person.id} value={person.id}>{person.label}</option>)}</select></label>
+    <fieldset className="entry-group span-4"><legend>Obra e equipe</legend>
+      <div className="entry-row entry-row-2">
+        <label className="field">Obra<select name="workId" required value={workId} onChange={(event) => selectWork(event.target.value)}><option value="">Selecione</option>{works.map((work) => <option key={work.id} value={work.id}>{work.label}</option>)}</select></label>
+        <label className="field">Competência<input value={selectedWork?.competence.slice(0, 7) || ""} placeholder="Selecione a obra" readOnly /></label>
+        <label className="field">Equipamento<select name="assetId" value={assetId} onChange={(event) => setAssetId(event.target.value)} disabled={!selectedWork || selectedWork.blocked}><option value="">Não se aplica</option>{assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.label}</option>)}</select></label>
+        <label className="field">Operador/motorista<select name="personId" value={personId} onChange={(event) => setPersonId(event.target.value)} disabled={!selectedWork || selectedWork.blocked}><option value="">Não se aplica</option>{people.map((person) => <option key={person.id} value={person.id}>{person.label}</option>)}</select></label>
       </div>
-      <div className="entry-row entry-row-hours span-4">
+    </fieldset>
+    {selectedWork?.blocked && <p className="error span-4">A competência desta obra venceu. <Link href="/fechamentos"><strong>Feche a competência pendente</strong></Link> para liberar o mês vigente.</p>}
+    <fieldset className="entry-group span-4" disabled={!selectedWork || selectedWork.blocked}><legend>Jornada e valores</legend>
+      <div className="entry-row entry-row-hours">
         <label className="field">Data<input name="date" type="date" min={selectedWork?.competence} max={today} value={date} onChange={(event) => setDate(event.target.value)} required /></label>
         <label className="field">Hora de início<input name="startTime" type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
         <label className="field">Hora final<input name="endTime" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
@@ -225,12 +225,14 @@ export function CostCenterEntryForm({
         <label className="field">Segundo final <span className="muted">(opcional)</span><input name="secondEndTime" type="time" value={secondEndTime} onChange={(event) => setSecondEndTime(event.target.value)} /></label>
         <label className="field">Total de horas<output className="elapsed-total" aria-live="polite">{elapsedMinutes !== null ? <>{Math.floor(elapsedMinutes / 60)}h{elapsedMinutes % 60 ? ` ${elapsedMinutes % 60}min` : ""}</> : "—"}</output></label>
       </div>
-      <div className="entry-row entry-row-history span-4">
+      <div className="entry-row entry-row-history">
         <label className="field">Histórico <span className="muted">(opcional)</span><input name="history" value={history} onChange={(event) => setHistory(event.target.value)} /></label>
         <label className="field">Documento<input name="document" value={document} onChange={(event) => setDocument(event.target.value)} /></label>
         <label className="field">Valor cobrado (R$)<input name="amount" type="number" step="0.01" min="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
       </div>
-      <div className="entry-row entry-row-accounts span-4">
+    </fieldset>
+    <fieldset className="entry-group span-4" disabled={!selectedWork || selectedWork.blocked}><legend>Classificação contábil</legend>
+      <div className="entry-row entry-row-accounts">
         <label className="field">Tipo de lançamento<select name="entryTypeId" required value={entryTypeId} onChange={(event) => selectEntryType(event.target.value)}><option value="">Selecione</option>{entryTypes.map((entryType) => <option key={entryType.id} value={entryType.id}>{entryType.label}</option>)}</select></label>
         <label className="field">Conta devedora<select name="debitAccountId" required value={debitAccountId} onChange={(event) => setDebitAccountId(event.target.value)}><option value="">Selecione</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select></label>
         <label className="field">Conta credora<select name="creditAccountId" required value={creditAccountId} onChange={(event) => setCreditAccountId(event.target.value)}><option value="">Selecione</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select></label>

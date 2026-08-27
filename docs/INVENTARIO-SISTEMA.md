@@ -154,6 +154,8 @@ omitidos.
 - A apresentação agrupa o formulário em cinco linhas: obra/competência;
   equipamento/operador; data, horários e total; histórico/documento/valor; tipo
   e contas.
+- As cinco linhas aparecem dentro de três caixas visuais: Obra e equipe, Jornada
+  e valores e Classificação contábil.
 - Os horários recebem apenas `HH:mm`; não se informa outra data. Cada período
   preenchido exige início e final, e o segundo período só pode existir junto do
   primeiro. O final deve ser posterior ao início, os períodos não podem se
