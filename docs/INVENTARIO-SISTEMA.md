@@ -321,10 +321,9 @@ O seed cria/atualiza:
 | `20260827174500_add_second_entry_period` | Adiciona um segundo período opcional aos lançamentos para registrar jornadas com intervalo |
 | `20260827183000_add_system_settings` | Cria a configuração única da empresa, armazenamento da imagem e permissão administrativa |
 
-Produção possui as dez primeiras migrations aplicadas. A décima primeira está
-preparada localmente para as configurações da empresa e ainda requer backup e
-implantação. Nunca usar `prisma db push` em produção; mudanças de schema devem
-usar migration revisada e backup prévio.
+Produção possui as onze migrations aplicadas, incluindo as configurações da
+empresa. Nunca usar `prisma db push` em produção; mudanças de schema devem usar
+migration revisada e backup prévio.
 
 ## Segurança, sessão e PWA
 

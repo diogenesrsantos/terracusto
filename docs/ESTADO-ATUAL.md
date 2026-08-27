@@ -7,12 +7,18 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 28 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
-Alteração local pendente de implantação em 27/08/2026: foi criada a rota
-`/configuracoes` para os dados da empresa usuária e o upload autenticado da
-imagem padrão dos relatórios. O componente `ReportHeader` posiciona a imagem à
-esquerda e reúne os dados institucionais. A migration
-`20260827183000_add_system_settings` cria o singleton e a permissão
-`settings.manage`; produção permanece com as 10 migrations anteriores.
+Em 27/08/2026, foi criada a rota `/configuracoes` para os dados da empresa
+usuária e o upload autenticado da imagem padrão dos relatórios. O componente
+`ReportHeader` posiciona a imagem à esquerda e reúne os dados institucionais. A
+migration `20260827183000_add_system_settings` cria o singleton e a permissão
+`settings.manage`.
+
+Implantação validada em 27/08/2026: backup pré-migration
+`terracusto-20260827-151347.dump` (72.809 bytes), 11 migrations aplicadas sem
+pendências, build remoto aprovado com 22 rotas, serviço ativo desde 15:16 -03 e
+health check com aplicação e banco `ok`. O domínio público respondeu HTTP 307
+para `/login`, a rota da imagem respondeu HTTP 401 sem sessão e o timer de
+backup permaneceu ativo.
 
 Em 27/08/2026, o Centro de custos passou a aceitar um segundo período opcional
 no mesmo lançamento, permitindo registrar manhã e tarde e somar ambas as
