@@ -86,15 +86,26 @@ export async function savePerson(form: FormData) {
   revalidatePath("/pessoas");
 }
 
-export async function createUser(form: FormData) {
+export async function saveUser(form: FormData) {
   const user = await requirePermission("users.manage");
+  const id = optional(form, "id");
   const roleId = text(form, "roleId");
-  const row = await db.user.create({ data: {
+  const password = text(form, "password");
+  if (!id && password.length < 8) throw new Error("A senha inicial deve ter pelo menos 8 caracteres.");
+  if (id && password && password.length < 8) throw new Error("A nova senha deve ter pelo menos 8 caracteres.");
+  const passwordHash = password ? await hash(password, 12) : null;
+  const data = {
     name: text(form, "name"), email: text(form, "email").toLowerCase(),
-    passwordHash: await hash(text(form, "password"), 12), personId: optional(form, "personId"),
-    roles: { create: { roleId } },
-  }});
-  await audit(user.userId, "CREATE", "User", row.id);
+    personId: optional(form, "personId"), ...(passwordHash ? { passwordHash } : {}),
+  };
+  const row = await db.$transaction(async (tx) => {
+    if (!id) return tx.user.create({ data: { ...data, passwordHash: passwordHash!, roles: { create: { roleId } } } });
+    const updated = await tx.user.update({ where: { id }, data });
+    await tx.userRole.deleteMany({ where: { userId: id } });
+    await tx.userRole.create({ data: { userId: id, roleId } });
+    return updated;
+  });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "User", row.id);
   revalidatePath("/usuarios");
 }
 
@@ -108,15 +119,18 @@ export async function createRole(form: FormData) {
   await audit(user.userId, "CREATE", "Role", row.id); revalidatePath("/usuarios");
 }
 
-export async function createWork(form: FormData) {
+export async function saveWork(form: FormData) {
   const user = await requirePermission("works.manage");
-  const row = await db.work.create({ data: {
+  const id = optional(form, "id");
+  const data = {
     name: text(form, "name"), client: text(form, "client"),
     description: optional(form, "description"), startDate: text(form, "startDate") ? when(form, "startDate") : null,
-    periods: { create: { competence: monthStart(businessToday()) } },
-  }});
-  await audit(user.userId, "CREATE", "Work", row.id);
-  revalidatePath("/obras");
+  };
+  const row = id
+    ? await db.work.update({ where: { id }, data })
+    : await db.work.create({ data: { ...data, periods: { create: { competence: monthStart(businessToday()) } } } });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "Work", row.id);
+  ["/obras", "/", "/lancamentos", "/fechamentos", "/combustivel", "/almoxarifado", "/manutencao"].forEach((path) => revalidatePath(path));
 }
 
 export async function createEquipmentType(form: FormData) {
@@ -126,16 +140,18 @@ export async function createEquipmentType(form: FormData) {
   revalidatePath("/equipamentos");
 }
 
-export async function createAsset(form: FormData) {
+export async function saveAsset(form: FormData) {
   const user = await requirePermission("assets.manage");
-  const row = await db.asset.create({ data: {
+  const id = optional(form, "id");
+  const data = {
     equipmentTypeId: text(form, "equipmentTypeId"),
     identifier: text(form, "identifier").toUpperCase().replace(/[^A-Z0-9-]/g, ""),
     description: text(form, "description"), brand: optional(form, "brand"), model: optional(form, "model"),
     fuelTypeId: optional(form, "fuelTypeId"), expectedUsage: text(form, "expectedUsage") ? decimal(form, "expectedUsage") : null,
-  }});
-  await audit(user.userId, "CREATE", "Asset", row.id);
-  revalidatePath("/equipamentos");
+  };
+  const row = id ? await db.asset.update({ where: { id }, data }) : await db.asset.create({ data });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "Asset", row.id);
+  ["/equipamentos", "/lancamentos", "/combustivel", "/manutencao"].forEach((path) => revalidatePath(path));
 }
 
 export async function saveAccount(form: FormData) {

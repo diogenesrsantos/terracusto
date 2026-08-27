@@ -20,10 +20,10 @@ clientes nem conteúdo das variáveis de ambiente.
   `America/Bahia`.
 - Produção: `https://terracusto.provizi.net.br`.
 - Stack: Next.js 16.3.3, React 19, TypeScript 5, Prisma 6.12 e PostgreSQL.
-- Repositório/branch consolidada: `feat/evolucoes-operacionais`, commit base
-  `66a7b027cc46bf8a1d9b0b9949e6177b37582f58`.
-- A produção contém evoluções posteriores ainda não consolidadas em um novo
-  commit; a relação exata está em `docs/ESTADO-ATUAL.md`.
+- Repositório/branch consolidada: `feat/evolucoes-operacionais`; confirme o
+  commit vigente com `git rev-parse HEAD`.
+- Evoluções locais posteriores ao commit consolidado são registradas em
+  `docs/ESTADO-ATUAL.md` antes da implantação.
 
 ## Mapa funcional
 
@@ -31,9 +31,9 @@ clientes nem conteúdo das variáveis de ambiente.
 | --- | --- | --- | --- |
 | `/` | Visão geral | `dashboard.view` | Quantidade de obras e equipamentos, débitos do mês, manutenções abertas e oito lançamentos recentes |
 | `/pessoas` | Pessoas | `people.manage` | Cadastro e edição de pessoas, catálogo de funções, atividades e vínculo pessoa/atividade |
-| `/usuarios` | Usuários | `users.manage` | Criação de usuário, vínculo opcional com pessoa, atribuição de perfil e criação de perfis personalizados |
-| `/obras` | Obras | `works.manage` | Cadastro e listagem de obras/centros de custo |
-| `/equipamentos` | Equipamentos | `assets.manage` | Cadastro de tipos e equipamentos/ativos |
+| `/usuarios` | Usuários | `users.manage` | Cadastro, edição e paginação de usuários, vínculo com pessoa, perfil e criação de perfis personalizados |
+| `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de obras/centros de custo |
+| `/equipamentos` | Equipamentos | `assets.manage` | Cadastro de tipos e cadastro, edição e paginação de equipamentos/ativos |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Cadastro, edição, situação, exclusão e contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtro por obra e edição |
@@ -71,10 +71,13 @@ omitidos.
   cadastro.
 - Funções são registros estruturados (`JobFunction`), não texto livre.
 - Usuário pode ser vinculado a uma pessoa e pode possuir vários perfis no banco;
-  o formulário atual atribui um perfil na criação.
+  o formulário atribui um perfil no cadastro e na alteração.
 - A senha inicial aceita no formulário possui no mínimo oito caracteres. A
   troca da própria senha exige a senha atual, confirmação e no mínimo dez
   caracteres.
+- Usuários são listados alfabeticamente em páginas de até 20 registros. A linha
+  selecionada carrega nome, e-mail, perfil e vínculo com pessoa para alteração.
+  A nova senha é opcional e, quando vazia, preserva o hash existente.
 - O sistema inicializa os perfis Administrador e Escriturário. O Administrador
   recebe todas as 11 permissões; o Escriturário não recebe `users.manage` nem
   `closing.reopen`.
@@ -92,6 +95,10 @@ omitidos.
   números e hífen.
 - Tipos de equipamento são um catálogo livre. A interface atual cria e lista,
   mas não edita nem exclui esses tipos.
+- Obras e equipamentos possuem listagens paginadas de até 20 registros, seleção
+  acessível por mouse ou teclado e formulário compartilhado entre cadastro e
+  alteração. O código da obra permanece imutável; todos os campos cadastrais do
+  equipamento podem ser atualizados.
 
 ### Plano de contas e tipos de lançamento
 
@@ -256,9 +263,9 @@ Valores monetários e quantitativos usam `Decimal`; identificadores internos usa
 | --- | --- |
 | Sessão | `login`, `logout` e `changePassword` |
 | `people.manage` | `createActivity`, `createJobFunction`, `assignActivity` e `savePerson` |
-| `users.manage` | `createUser` e `createRole` |
-| `works.manage` | `createWork`, incluindo a competência inicial |
-| `assets.manage` | `createEquipmentType` e `createAsset` |
+| `users.manage` | `saveUser` e `createRole` |
+| `works.manage` | `saveWork`, incluindo a competência inicial somente na criação |
+| `assets.manage` | `createEquipmentType` e `saveAsset` |
 | `accounting.manage` | `saveAccount`, `saveEntryType`, `deleteEntryType` e `saveEntry` |
 | `closing.close` | `closePeriod` |
 | `closing.reopen` | `reopenPeriod` |

@@ -71,6 +71,19 @@ geradas, serviço ativo desde 09:48 -03 e health check com aplicação e banco
 `ok`. O artefato publicado identifica Histórico como opcional. Não houve
 alteração de schema nem de dados durante o deploy.
 
+Em 27/08/2026, Usuários e acessos, Obras e Equipamentos receberam o mesmo fluxo
+de seleção e alteração já usado em Pessoas, além de listagens com 20 registros
+por página. Usuários podem atualizar dados, perfil, pessoa vinculada e
+opcionalmente a senha; obras preservam código e competências; equipamentos
+permitem alterar todos os campos cadastrais.
+
+Implantação validada em 27/08/2026: typecheck e builds local/remoto aprovados,
+oito migrations sem pendências, 19 rotas geradas, serviço ativo desde 10:56 -03
+e health check com aplicação e banco `ok`. O domínio público respondeu HTTP 307
+para `/login` com os cabeçalhos de segurança e o timer de backup permaneceu
+ativo. Não houve alteração de schema ou escrita automática de dados, portanto
+não foi necessário backup específico.
+
 ## Código
 
 - Repositório local: `/home/diogenes/Desenvolvimento/Reflex/terracusto`

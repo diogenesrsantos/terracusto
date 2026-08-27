@@ -56,6 +56,14 @@ classificação não são alterados por esse fluxo. Antes da atualização,
 `saveAccount` confirma que a conta superior é sintética e percorre seus
 ancestrais para impedir ciclos na árvore.
 
+`components/users-manager.tsx`, `works-manager.tsx` e `assets-manager.tsx`
+reutilizam o padrão cliente de seleção e alteração de Pessoas. As páginas
+servidoras limitam as consultas a 20 registros, normalizam a página solicitada e
+fornecem totais para a navegação. As ações `saveUser`, `saveWork` e `saveAsset`
+distinguem criação e atualização pelo identificador oculto e auditam ambas.
+`saveUser` troca perfil e dados do usuário em transação; uma senha vazia na
+alteração não modifica `passwordHash`.
+
 ## Domínios de dados
 
 O schema possui 27 modelos, agrupados assim:

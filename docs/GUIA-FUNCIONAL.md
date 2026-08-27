@@ -6,9 +6,9 @@
 | --- | --- | --- | --- |
 | `/` | Visão geral | `dashboard.view` | Indicadores do mês e últimos lançamentos |
 | `/pessoas` | Pessoas | `people.manage` | Pessoas, funções, atividades, edição e vínculos |
-| `/usuarios` | Usuários e acessos | `users.manage` | Usuários e perfis personalizados |
-| `/obras` | Obras | `works.manage` | Cadastro de centros de custo/obras |
-| `/equipamentos` | Equipamentos | `assets.manage` | Tipos de equipamento e cadastro de ativos |
+| `/usuarios` | Usuários e acessos | `users.manage` | Cadastro, edição e paginação de usuários; perfis personalizados |
+| `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de centros de custo/obras |
+| `/equipamentos` | Equipamentos | `assets.manage` | Tipos, cadastro, edição e paginação de ativos |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Configuração das contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
@@ -43,8 +43,23 @@ O seed mantém dois perfis:
   `closing.reopen`.
 
 Novos perfis podem ser criados na tela de usuários escolhendo qualquer
-combinação das 11 permissões. Atualmente a interface permite criar usuários e
-perfis, mas não editar, desativar ou excluir cadastros existentes.
+combinação das 11 permissões. Usuários existentes podem ter nome, e-mail,
+perfil, vínculo com pessoa e senha alterados; deixar a nova senha vazia preserva
+a credencial atual. Perfis ainda não possuem edição, desativação ou exclusão.
+
+### Cadastros operacionais
+
+- As listagens de Usuários e acessos, Obras e Equipamentos apresentam até 20
+  registros por página e mostram a quantidade total cadastrada.
+- Clicar ou usar Enter/Espaço em uma linha carrega o registro no formulário,
+  destaca a seleção e ativa o modo de alteração. Cancelar ou salvar retorna o
+  formulário ao modo de novo cadastro.
+- A edição de usuário permite alterar nome, e-mail, perfil e vínculo com pessoa.
+  A senha é opcional na alteração e somente é substituída quando preenchida.
+- A edição de obra preserva o código autoincrementável e a competência; permite
+  alterar nome, cliente, descrição e data inicial.
+- A edição de equipamento permite alterar tipo, identificador, descrição,
+  marca, modelo, combustível e consumo esperado.
 
 ## Regras principais
 
