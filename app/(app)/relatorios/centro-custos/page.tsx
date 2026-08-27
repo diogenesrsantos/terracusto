@@ -42,7 +42,7 @@ export default async function CostCenterReportPage({ searchParams }: { searchPar
   const totalHours = summaries.reduce((total, summary) => total + summary.hours, 0);
 
   return <>
-    <div className="no-print"><PageHead title="Relatório de centro de custos" subtitle="Consulte os lançamentos de uma obra por uma ou mais competências." /></div>
+    <div className="no-print"><PageHead title="Centro de custo" subtitle="Consulte os lançamentos de uma obra por uma ou mais competências." /></div>
     <section className="card no-print">
       <form method="get" className="form-grid">
         <label className="field span-2">Centro de custo / obra<select name="workId" defaultValue={selectedWork?.id || ""} required><option value="">Selecione um centro de custo ativo</option>{works.map((work) => <option key={work.id} value={work.id}>{work.code} — {work.name}</option>)}</select></label>
@@ -54,7 +54,7 @@ export default async function CostCenterReportPage({ searchParams }: { searchPar
 
     {selectedWork && selectedCompetences.length > 0 && <section className="report-sheet">
       <div className="report-actions no-print"><PrintButton /></div>
-      <ReportHeader title="Relatório de centro de custos" />
+      <ReportHeader title="Centro de custo" />
       <div className="report-meta"><strong>Centro de custo:</strong> {selectedWork.code} — {selectedWork.name}<br /><strong>Competências:</strong> {selectedCompetences.map(competenceLabel).join(", ")}<br /><strong>Tipo:</strong> {mode === "detail" ? "Detalhado" : "Resumo por competência"}</div>
       {mode === "summary" ? <>
         <h2>Totais por competência</h2>
@@ -63,7 +63,7 @@ export default async function CostCenterReportPage({ searchParams }: { searchPar
         <h2>Lançamentos detalhados</h2>
         {reportEntries.length === 0 ? <Empty>Nenhum lançamento encontrado para as competências selecionadas.</Empty> : <div className="table-wrap"><table><thead><tr><th>Competência</th><th>Data</th><th>Tipo / histórico</th><th>Equipamento / operador</th><th>Horários</th><th>Contas</th><th className="text-right">Valor</th></tr></thead><tbody>{reportEntries.map((entry) => { const amount = entry.lines.find((line) => Number(line.debit) > 0)?.debit || 0; return <tr key={entry.id}><td>{competenceLabel(entry.competence.toISOString().slice(0, 7))}</td><td>{date(entry.date)}</td><td><strong>{entry.entryType?.name || "Sem tipo"}</strong><br />{entry.history || "—"}<br /><small className="muted">{entry.document || "Sem documento"}</small></td><td>{entry.asset ? `${entry.asset.identifier} — ${entry.asset.description}` : "—"}<br /><small>{entry.person?.name || "—"}</small></td><td>{entry.startAt ? `${timeInput(entry.startAt)} — ${timeInput(entry.endAt)}` : "—"}{entry.secondStartAt && entry.secondEndAt && <><br />{timeInput(entry.secondStartAt)} — {timeInput(entry.secondEndAt)}</>}</td><td>{entry.lines.map((line) => <small key={line.id} style={{ display: "block" }}>{Number(line.debit) > 0 ? "D" : "C"} · {line.account.code} {line.account.name}</small>)}</td><td className="text-right">{money(amount)}</td></tr>; })}</tbody><tfoot><tr><th colSpan={6}>Total geral</th><th className="text-right">{money(totalAmount)}</th></tr></tfoot></table></div>}
       </>}
-      <p className="report-footer">Relatório emitido em {date(new Date())} · Total de horas: {number(totalHours)}</p>
+      <p className="report-footer">Emitido em {date(new Date())} · Total de horas: {number(totalHours)}</p>
     </section>}
   </>;
 }

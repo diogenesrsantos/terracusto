@@ -14,7 +14,7 @@
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Configuração das contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
-| `/relatorios/centro-custos` | Relatório de centro de custos | `accounting.manage` | Resumo ou detalhamento por obra e competência, com impressão |
+| `/relatorios/centro-custos` | Centro de custo | `accounting.manage` | Resumo ou detalhamento por obra e competência, com impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento e balancete mensal |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura com senha e justificativa |
 | `/combustivel` | Combustível | `fuel.manage` | Fornecedores, compras, tanque e abastecimentos |
