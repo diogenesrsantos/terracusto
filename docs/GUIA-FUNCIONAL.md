@@ -108,12 +108,14 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   sistema impede que uma conta seja movida para dentro dela mesma ou de uma de
   suas descendentes.
 - A competência é o primeiro dia UTC do mês da data informada.
-- Hora de início e hora final são opcionais e não exigem repetir a data. Quando
-  informadas, ambas são obrigatórias, geram a quantidade de horas e a hora
-  final deve ser posterior à inicial.
+- O primeiro período de trabalho é opcional e usa hora de início e hora final.
+  Um segundo período também pode ser informado para jornadas com intervalo,
+  como manhã e tarde. Cada período preenchido exige as duas horas, o final deve
+  ser posterior ao início e o segundo período não pode começar antes do término
+  do primeiro. A duração destacada em azul é a soma dos períodos informados.
 - Para lançamentos em grupo, depois de contabilizar ou salvar uma alteração o
   formulário preserva obra, data, tipo, histórico, documento, contas,
-  equipamento e pessoa. Somente valor cobrado, hora de início e hora final são
+  equipamento e pessoa. Somente valor cobrado e as horas dos dois períodos são
   limpos, e o formulário retorna ao modo de novo lançamento.
 - A listagem do Centro de custos mostra somente os lançamentos da obra
   selecionada, em páginas de até 20 registros. Ao clicar ou usar Enter/Espaço

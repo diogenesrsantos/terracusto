@@ -54,6 +54,8 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
       personName: entry.person?.name || "",
       startTime: timeInput(entry.startAt),
       endTime: timeInput(entry.endAt),
+      secondStartTime: timeInput(entry.secondStartAt),
+      secondEndTime: timeInput(entry.secondEndAt),
       hours: entry.hours ? number(entry.hours) : "",
     };
   });

@@ -238,28 +238,30 @@ model EntryType {
 }
 
 model AccountingEntry {
-  id           String           @id @default(cuid())
-  date         DateTime
-  competence   DateTime
-  history      String
-  document     String?
-  status       EntryStatus      @default(POSTED)
-  workId       String
-  personId     String?
-  assetId      String?
-  entryTypeId  String?
-  startAt      DateTime?
-  endAt        DateTime?
-  hours        Decimal?         @db.Decimal(10, 2)
-  createdById  String
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  work         Work             @relation(fields: [workId], references: [id])
-  person       Person?          @relation("EntryPerson", fields: [personId], references: [id])
-  asset        Asset?           @relation(fields: [assetId], references: [id])
-  entryType    EntryType?       @relation(fields: [entryTypeId], references: [id])
-  lines        AccountingLine[]
-  fuelPurchase FuelPurchase?
+  id            String           @id @default(cuid())
+  date          DateTime
+  competence    DateTime
+  history       String
+  document      String?
+  status        EntryStatus      @default(POSTED)
+  workId        String
+  personId      String?
+  assetId       String?
+  entryTypeId   String?
+  startAt       DateTime?
+  endAt         DateTime?
+  secondStartAt DateTime?
+  secondEndAt   DateTime?
+  hours         Decimal?         @db.Decimal(10, 2)
+  createdById   String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  work          Work             @relation(fields: [workId], references: [id])
+  person        Person?          @relation("EntryPerson", fields: [personId], references: [id])
+  asset         Asset?           @relation(fields: [assetId], references: [id])
+  entryType     EntryType?       @relation(fields: [entryTypeId], references: [id])
+  lines         AccountingLine[]
+  fuelPurchase  FuelPurchase?
 
   @@index([workId, competence, status])
   @@index([entryTypeId])

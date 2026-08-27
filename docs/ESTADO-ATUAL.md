@@ -7,6 +7,12 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 27 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
+Alteração local pendente de implantação em 27/08/2026: o Centro de custos aceita
+um segundo período opcional no mesmo lançamento, permitindo registrar manhã e
+tarde e somar ambas as durações. Um único período continua funcionando. A
+migration `20260827174500_add_second_entry_period` adiciona duas colunas
+anuláveis e deverá ser precedida por backup antes de ser aplicada na produção.
+
 Em 27/08/2026, a listagem do Plano de contas foi convertida em TreeView. Contas
 sintéticas possuem ícone de pasta e controles de expansão; contas analíticas
 possuem ícone de documento. A árvore respeita `Account.parentId`, inicia

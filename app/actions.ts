@@ -292,21 +292,36 @@ export async function saveEntry(form: FormData) {
   if (amount.lte(0) || debitAccountId === creditAccountId) throw new Error("Valor e contas do lançamento são inválidos.");
   const accounts = await db.account.count({ where: { id: { in: [debitAccountId, creditAccountId] }, active: true, analytic: true } });
   if (accounts !== 2) throw new Error("Use duas contas analíticas ativas.");
-  let startAt: Date | null = null, endAt: Date | null = null, hours: Prisma.Decimal | null = null;
+  let startAt: Date | null = null, endAt: Date | null = null;
+  let secondStartAt: Date | null = null, secondEndAt: Date | null = null;
+  let hours: Prisma.Decimal | null = null;
   const startTime = text(form, "startTime"); const endTime = text(form, "endTime");
+  const secondStartTime = text(form, "secondStartTime"); const secondEndTime = text(form, "secondEndTime");
   if (Boolean(startTime) !== Boolean(endTime)) throw new Error("Informe as horas inicial e final.");
+  if (Boolean(secondStartTime) !== Boolean(secondEndTime)) throw new Error("Informe as horas inicial e final do segundo período.");
+  if (secondStartTime && !startTime) throw new Error("Informe o primeiro período antes do segundo.");
+  const validTime = (value: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+  let elapsedMilliseconds = 0;
   if (startTime && endTime) {
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime)) {
-      throw new Error("Informe horas válidas.");
-    }
+    if (!validTime(startTime) || !validTime(endTime)) throw new Error("Informe horas válidas no primeiro período.");
     const day = text(form, "date");
     startAt = new Date(`${day}T${startTime}:00-03:00`); endAt = new Date(`${day}T${endTime}:00-03:00`);
     if (endAt <= startAt) throw new Error("A hora final deve ser posterior à inicial.");
-    hours = new Prisma.Decimal((endAt.getTime() - startAt.getTime()) / 3_600_000);
+    elapsedMilliseconds += endAt.getTime() - startAt.getTime();
   }
+  if (secondStartTime && secondEndTime) {
+    if (!validTime(secondStartTime) || !validTime(secondEndTime)) throw new Error("Informe horas válidas no segundo período.");
+    const day = text(form, "date");
+    secondStartAt = new Date(`${day}T${secondStartTime}:00-03:00`); secondEndAt = new Date(`${day}T${secondEndTime}:00-03:00`);
+    if (secondEndAt <= secondStartAt) throw new Error("A hora final do segundo período deve ser posterior à inicial.");
+    if (endAt && secondStartAt < endAt) throw new Error("O segundo período deve começar após o término do primeiro.");
+    elapsedMilliseconds += secondEndAt.getTime() - secondStartAt.getTime();
+  }
+  if (elapsedMilliseconds > 0) hours = new Prisma.Decimal(elapsedMilliseconds / 3_600_000);
   const data = {
     date, competence, history: text(form, "history"), document: optional(form, "document"), workId,
-    personId: optional(form, "personId"), assetId: optional(form, "assetId"), entryTypeId, startAt, endAt, hours,
+    personId: optional(form, "personId"), assetId: optional(form, "assetId"), entryTypeId,
+    startAt, endAt, secondStartAt, secondEndAt, hours,
     lines: { create: [
       { accountId: debitAccountId, debit: amount, credit: 0 },
       { accountId: creditAccountId, debit: 0, credit: amount },

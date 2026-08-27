@@ -38,6 +38,8 @@ export type CostCenterEntryItem = {
   personName: string;
   startTime: string;
   endTime: string;
+  secondStartTime: string;
+  secondEndTime: string;
   hours: string;
 };
 
@@ -79,17 +81,23 @@ export function CostCenterEntryForm({
   const [personId, setPersonId] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [secondStartTime, setSecondStartTime] = useState("");
+  const [secondEndTime, setSecondEndTime] = useState("");
   const [editing, setEditing] = useState<CostCenterEntryItem | null>(null);
   const selectedWork = useMemo(() => works.find((work) => work.id === workId), [workId, works]);
   const elapsedMinutes = useMemo(() => {
-    if (!startTime || !endTime) return null;
     const toMinutes = (value: string) => {
       const [hours, minutes] = value.split(":").map(Number);
       return hours * 60 + minutes;
     };
-    const elapsed = toMinutes(endTime) - toMinutes(startTime);
-    return elapsed > 0 ? elapsed : null;
-  }, [startTime, endTime]);
+    if (!startTime || !endTime) return null;
+    const firstElapsed = toMinutes(endTime) - toMinutes(startTime);
+    if (firstElapsed <= 0) return null;
+    if (!secondStartTime && !secondEndTime) return firstElapsed;
+    if (!secondStartTime || !secondEndTime || toMinutes(secondStartTime) < toMinutes(endTime)) return null;
+    const secondElapsed = toMinutes(secondEndTime) - toMinutes(secondStartTime);
+    return secondElapsed > 0 ? firstElapsed + secondElapsed : null;
+  }, [startTime, endTime, secondStartTime, secondEndTime]);
 
   function applyDraft(draft: EntryDraft | null) {
     setEntryTypeId(draft?.entryTypeId || "");
@@ -129,6 +137,8 @@ export function CostCenterEntryForm({
     setAmount("");
     setStartTime("");
     setEndTime("");
+    setSecondStartTime("");
+    setSecondEndTime("");
     if (value) {
       window.localStorage.setItem("terracusto.defaultWorkId", value);
       router.push(`/lancamentos?workId=${encodeURIComponent(value)}&page=1`);
@@ -158,6 +168,8 @@ export function CostCenterEntryForm({
     setPersonId(entry.personId);
     setStartTime(entry.startTime);
     setEndTime(entry.endTime);
+    setSecondStartTime(entry.secondStartTime);
+    setSecondEndTime(entry.secondEndTime);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -180,6 +192,8 @@ export function CostCenterEntryForm({
     setAmount("");
     setStartTime("");
     setEndTime("");
+    setSecondStartTime("");
+    setSecondEndTime("");
   }
 
   function cancelEditing() {
@@ -187,6 +201,8 @@ export function CostCenterEntryForm({
     setAmount("");
     setStartTime("");
     setEndTime("");
+    setSecondStartTime("");
+    setSecondEndTime("");
   }
 
   return <><section className="card"><h2>{editing ? "Alteração de lançamento" : "Novo lançamento"}</h2><form action={submitEntry} className="form-grid">
@@ -199,7 +215,9 @@ export function CostCenterEntryForm({
       <label className="field">Operador/motorista<select name="personId" value={personId} onChange={(event) => setPersonId(event.target.value)}><option value="">Não se aplica</option>{people.map((person) => <option key={person.id} value={person.id}>{person.label}</option>)}</select></label>
       <label className="field">Data<input name="date" type="date" min={selectedWork?.competence} max={today} value={date} onChange={(event) => setDate(event.target.value)} required /></label>
       <label className="field">Hora de início<input name="startTime" type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
-      <label className="field">Hora final<input name="endTime" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} />{elapsedMinutes !== null && <output className="elapsed-hours" aria-live="polite">Duração: {Math.floor(elapsedMinutes / 60)}h{elapsedMinutes % 60 ? ` ${elapsedMinutes % 60}min` : ""}</output>}</label>
+      <label className="field">Hora final<input name="endTime" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
+      <label className="field">Segundo início <span className="muted">(opcional)</span><input name="secondStartTime" type="time" value={secondStartTime} onChange={(event) => setSecondStartTime(event.target.value)} /></label>
+      <label className="field">Segundo final <span className="muted">(opcional)</span><input name="secondEndTime" type="time" value={secondEndTime} onChange={(event) => setSecondEndTime(event.target.value)} />{elapsedMinutes !== null && <output className="elapsed-hours" aria-live="polite">Duração total: {Math.floor(elapsedMinutes / 60)}h{elapsedMinutes % 60 ? ` ${elapsedMinutes % 60}min` : ""}</output>}</label>
       <label className="field">Valor cobrado (R$)<input name="amount" type="number" step="0.01" min="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
       <label className="field span-2">Histórico <span className="muted">(opcional)</span><input name="history" value={history} onChange={(event) => setHistory(event.target.value)} /></label>
       <label className="field">Documento<input name="document" value={document} onChange={(event) => setDocument(event.target.value)} /></label>
@@ -211,7 +229,7 @@ export function CostCenterEntryForm({
   </form></section>
   <section className="card mt"><div className="list-head"><h2>Lançamentos da obra</h2><span className="muted">{totalEntries} {totalEntries === 1 ? "lançamento" : "lançamentos"}</span></div>
     {!workId ? <Empty>Selecione uma obra para visualizar seus lançamentos.</Empty> : entries.length === 0 ? <Empty>Nenhum lançamento nesta obra.</Empty> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Tipo/histórico</th><th>Contas</th><th>Equipamento/pessoa</th><th>Hora de início</th><th>Hora final</th><th>Duração</th><th className="text-right">Valor</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.id} className={`selectable-row${editing?.id === entry.id ? " selected" : ""}`} onClick={() => editEntry(entry)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); editEntry(entry); } }} role="button" tabIndex={0} aria-selected={editing?.id === entry.id}>
-      <td>{new Date(`${entry.date}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td><span className="badge">{entry.entryTypeName}</span><br />{entry.history}<br /><small className="muted">{entry.document || "Sem documento"}</small></td><td>{entry.accountSummary.map((line) => <small key={line} style={{ display: "block" }}>{line}</small>)}</td><td>{entry.assetLabel || "—"}<br /><small>{entry.personName}</small></td><td>{entry.startTime || "—"}</td><td>{entry.endTime || "—"}</td><td>{entry.hours || "—"}</td><td className="text-right">{Number(entry.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
+      <td>{new Date(`${entry.date}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td><span className="badge">{entry.entryTypeName}</span><br />{entry.history}<br /><small className="muted">{entry.document || "Sem documento"}</small></td><td>{entry.accountSummary.map((line) => <small key={line} style={{ display: "block" }}>{line}</small>)}</td><td>{entry.assetLabel || "—"}<br /><small>{entry.personName}</small></td><td>{entry.startTime ? <>1º: {entry.startTime}{entry.secondStartTime && <><br />2º: {entry.secondStartTime}</>}</> : "—"}</td><td>{entry.endTime ? <>1º: {entry.endTime}{entry.secondEndTime && <><br />2º: {entry.secondEndTime}</>}</> : "—"}</td><td>{entry.hours || "—"}</td><td className="text-right">{Number(entry.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
     </tr>)}</tbody></table></div>}
     {workId && <nav className="pagination" aria-label="Paginação de lançamentos">{page > 1 ? <Link className="btn secondary" href={`/lancamentos?workId=${encodeURIComponent(workId)}&page=${page - 1}`}>Anterior</Link> : <button className="btn secondary" type="button" disabled>Anterior</button>}<span>Página {page} de {totalPages}</span>{page < totalPages ? <Link className="btn secondary" href={`/lancamentos?workId=${encodeURIComponent(workId)}&page=${page + 1}`}>Próxima</Link> : <button className="btn secondary" type="button" disabled>Próxima</button>}</nav>}
   </section></>;

@@ -89,6 +89,12 @@ lançamento inseridas pela interface são normalizadas para meio-dia UTC, evitan
 mudança do dia ao exibir no fuso brasileiro. Competências usam o primeiro dia do
 mês em UTC.
 
+`AccountingEntry` armazena o primeiro período em `startAt`/`endAt` e, quando
+necessário, um segundo período anulável em `secondStartAt`/`secondEndAt`. A ação
+de gravação valida pares completos, ordem e ausência de sobreposição e persiste
+em `hours` a soma decimal dos dois intervalos. Registros com apenas o primeiro
+período e registros legados sem horários permanecem válidos.
+
 ## Autenticação e autorização
 
 - A autenticação usa e-mail e senha com `bcrypt`, custo 12.

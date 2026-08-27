@@ -142,16 +142,18 @@ omitidos.
 - Cada lançamento pertence a uma obra e a um tipo ativo e gera exatamente duas
   linhas de mesmo valor: uma de débito e uma de crédito.
 - Campos: obra, competência exibida, data, tipo, histórico opcional, documento,
-  contas, valor, equipamento opcional, pessoa opcional, hora inicial e hora
-  final.
+  contas, valor, equipamento opcional, pessoa opcional, primeiro período e
+  segundo período opcional.
 - A obra selecionada é persistida no navegador na chave
   `terracusto.defaultWorkId` e também fica na URL como `workId`.
 - Para lançamentos em grupo, após criar ou alterar um registro o formulário
   mantém obra, data, tipo, histórico, documento, contas, equipamento e pessoa.
-  Somente valor cobrado, hora inicial e hora final são limpos.
-- Os horários recebem apenas `HH:mm`; não se informa outra data. Se um horário
-  for preenchido, o outro também é obrigatório. O final deve ser posterior ao
-  início e a duração é calculada em horas decimais.
+  Somente valor cobrado e os horários dos dois períodos são limpos.
+- Os horários recebem apenas `HH:mm`; não se informa outra data. Cada período
+  preenchido exige início e final, e o segundo período só pode existir junto do
+  primeiro. O final deve ser posterior ao início, os períodos não podem se
+  sobrepor e a duração total é a soma em horas decimais. Um lançamento com
+  somente o primeiro período continua válido.
 - A listagem é filtrada pela obra selecionada, ordenada por data/criação
   decrescente e paginada em até 20 registros. Anterior e Próxima ficam sempre
   visíveis e são desabilitados quando não se aplicam.
@@ -313,10 +315,12 @@ O seed cria/atualiza:
 | `20260826233000_add_entry_types` | Reestrutura contas de serviços/reembolsos e cria tipos de lançamento |
 | `20260827001000_sync_service_entry_types` | Cria tipos para contas analíticas já existentes sob Serviços/Reembolsáveis |
 | `20260827141000_unify_companies` | Unifica clientes e fornecedores em `Company`, vincula obras e cria a permissão de empresas |
+| `20260827174500_add_second_entry_period` | Adiciona um segundo período opcional aos lançamentos para registrar jornadas com intervalo |
 
-Produção possui as nove migrations aplicadas, incluindo a unificação de
-empresas. Nunca usar `prisma db push` em produção; mudanças de schema devem usar
-migration revisada e backup prévio.
+Produção possui as nove primeiras migrations aplicadas, incluindo a unificação
+de empresas. A décima migration está preparada localmente e ainda requer backup
+e implantação. Nunca usar `prisma db push` em produção; mudanças de schema devem
+usar migration revisada e backup prévio.
 
 ## Segurança, sessão e PWA
 
