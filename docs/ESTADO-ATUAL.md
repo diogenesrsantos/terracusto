@@ -7,11 +7,18 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 31 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
-Há uma evolução local ainda não implantada: a migration
+Em 28/08/2026, a migration
 `20260828183000_add_entry_type_references` adiciona aos tipos de lançamento os
 indicadores de equipamento e operador/motorista. O Centro de custos passa a
 exibir o grupo de equipamento e jornada apenas para os tipos que usam alguma
 dessas referências; a validação equivalente também é feita no servidor.
+
+Implantação validada em 28/08/2026: backup pré-migration
+`terracusto-20260828-162623.dump` (163.908 bytes), 14 migrations sem
+pendências, build remoto aprovado com 24 rotas e health check com aplicação e
+banco `ok`. O build da VPS usa o typecheck executado separadamente antes da
+publicação, evitando repetir essa etapa durante a geração do artefato em um
+ambiente com memória limitada.
 
 Em 28/08/2026, o módulo `/ajuda` passou a administrar manuais por rota, com
 passos ordenados, texto e imagens. Páginas com manual ativo exibem o botão Ajuda

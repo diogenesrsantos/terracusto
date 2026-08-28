@@ -350,9 +350,8 @@ O seed cria/atualiza:
 | `20260828014500_add_help_guides` | Cria os manuais, passos, imagens e a permissão de administração da ajuda |
 | `20260828183000_add_entry_type_references` | Adiciona ao tipo de lançamento os indicadores de equipamento e operador/motorista e configura Serviço de máquinas com ambos |
 
-Produção possui as treze migrations aplicadas, incluindo os manuais de ajuda. A
-migration de referências do tipo de lançamento está preparada localmente para a
-próxima implantação.
+Produção possui as catorze migrations aplicadas, incluindo os manuais de ajuda
+e as referências do tipo de lançamento.
 Nunca usar `prisma db push` em produção; mudanças de schema devem usar migration
 revisada e backup prévio.
 
