@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // O typecheck é executado separadamente antes do deploy. Evita esgotar a
+  // memória limitada da VPS ao repetir a mesma verificação durante o build.
+  typescript: { ignoreBuildErrors: true },
   experimental: { serverActions: { bodySizeLimit: "15mb" } },
   async headers() {
     return [{ source: "/:path*", headers: [
