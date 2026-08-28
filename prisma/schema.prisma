@@ -108,6 +108,43 @@ model User {
   updatedAt    DateTime   @updatedAt
 }
 
+model HelpGuide {
+  id        String     @id @default(cuid())
+  pageKey   String     @unique
+  title     String
+  active    Boolean    @default(true)
+  steps     HelpStep[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model HelpStep {
+  id        String          @id @default(cuid())
+  guideId   String
+  position  Int
+  title     String
+  content   String
+  guide     HelpGuide       @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  images    HelpStepImage[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([guideId, position])
+}
+
+model HelpStepImage {
+  id        String   @id @default(cuid())
+  stepId    String
+  position  Int
+  data      Bytes
+  mimeType  String
+  fileName  String
+  step      HelpStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([stepId, position])
+}
+
 model Role {
   id          String           @id @default(cuid())
   code        String           @unique

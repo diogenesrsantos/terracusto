@@ -11,6 +11,7 @@ import { clearSession, createSession, requirePermission, requireUser } from "@/l
 import { businessToday, monthStart } from "@/lib/format";
 import { checkLoginRate, recordLoginFailure, resetLoginRate } from "@/lib/rate-limit";
 import { isThemeName } from "@/lib/themes";
+import { isHelpPage } from "@/lib/help-pages";
 
 const text = (form: FormData, key: string) => String(form.get(key) || "").trim();
 const optional = (form: FormData, key: string) => text(form, key) || null;
@@ -18,6 +19,8 @@ const decimal = (form: FormData, key: string) => new Prisma.Decimal(text(form, k
 const when = (form: FormData, key: string) => new Date(`${text(form, key)}T12:00:00Z`);
 const REPORT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const REPORT_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
+const HELP_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+const HELP_IMAGES_PER_STEP_MAX = 4;
 
 export async function login(form: FormData) {
   const requestHeaders = await headers();
@@ -80,6 +83,104 @@ export async function saveTheme(theme: string) {
   await db.user.update({ where: { id: user.userId }, data: { theme } });
   await audit(user.userId, "UPDATE_THEME", "User", user.userId, { theme });
   revalidatePath("/", "layout");
+}
+
+const revalidateHelp = () => {
+  revalidatePath("/ajuda");
+  revalidatePath("/", "layout");
+};
+
+export async function saveHelpGuide(form: FormData) {
+  const user = await requirePermission("help.manage");
+  const id = optional(form, "id");
+  const pageKey = text(form, "pageKey");
+  if (!isHelpPage(pageKey)) throw new Error("Página do manual inválida.");
+  const title = text(form, "title");
+  if (!title) throw new Error("Informe o título do manual.");
+  const existing = await db.helpGuide.findUnique({ where: { pageKey }, select: { id: true } });
+  if (existing && existing.id !== id) throw new Error("Já existe um manual para esta página.");
+  const data = { pageKey, title, active: text(form, "active") === "true" };
+  const guide = id ? await db.helpGuide.update({ where: { id }, data }) : await db.helpGuide.create({ data: { ...data, active: true } });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "HelpGuide", guide.id);
+  revalidateHelp();
+  return guide.id;
+}
+
+export async function deleteHelpGuide(form: FormData) {
+  const user = await requirePermission("help.manage");
+  const id = text(form, "id");
+  await db.helpGuide.delete({ where: { id } });
+  await audit(user.userId, "DELETE", "HelpGuide", id);
+  revalidateHelp();
+}
+
+export async function saveHelpStep(form: FormData) {
+  const user = await requirePermission("help.manage");
+  const id = optional(form, "id");
+  const guideId = text(form, "guideId");
+  const title = text(form, "title"), content = text(form, "content");
+  if (!title || !content) throw new Error("Informe o título e o texto do passo.");
+  await db.helpGuide.findUniqueOrThrow({ where: { id: guideId }, select: { id: true } });
+  const files = form.getAll("images").filter((value): value is File => value instanceof File && value.size > 0);
+  if (files.length > HELP_IMAGES_PER_STEP_MAX) throw new Error("Envie no máximo quatro imagens por passo.");
+  for (const file of files) {
+    if (!REPORT_IMAGE_TYPES.has(file.type)) throw new Error("As imagens devem estar em PNG, JPEG ou WebP.");
+    if (file.size > HELP_IMAGE_MAX_BYTES) throw new Error("Cada imagem deve ter no máximo 3 MB.");
+  }
+  const step = await db.$transaction(async (tx) => {
+    const current = id ? await tx.helpStep.findFirst({ where: { id, guideId } }) : null;
+    if (id && !current) throw new Error("Passo de ajuda inválido.");
+    const position = current?.position || ((await tx.helpStep.aggregate({ where: { guideId }, _max: { position: true } }))._max.position || 0) + 1;
+    const saved = current
+      ? await tx.helpStep.update({ where: { id: current.id }, data: { title, content } })
+      : await tx.helpStep.create({ data: { guideId, position, title, content } });
+    if (files.length > 0) {
+      const maxImagePosition = (await tx.helpStepImage.aggregate({ where: { stepId: saved.id }, _max: { position: true } }))._max.position || 0;
+      await tx.helpStepImage.createMany({ data: await Promise.all(files.map(async (file, index) => ({
+        stepId: saved.id, position: maxImagePosition + index + 1, data: new Uint8Array(await file.arrayBuffer()),
+        mimeType: file.type, fileName: file.name.slice(0, 255),
+      }))) });
+    }
+    return saved;
+  });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "HelpStep", step.id);
+  revalidateHelp();
+  return step.id;
+}
+
+export async function deleteHelpStep(form: FormData) {
+  const user = await requirePermission("help.manage");
+  const id = text(form, "id");
+  await db.helpStep.delete({ where: { id } });
+  await audit(user.userId, "DELETE", "HelpStep", id);
+  revalidateHelp();
+}
+
+export async function deleteHelpStepImage(form: FormData) {
+  const user = await requirePermission("help.manage");
+  const id = text(form, "id");
+  await db.helpStepImage.delete({ where: { id } });
+  await audit(user.userId, "DELETE", "HelpStepImage", id);
+  revalidateHelp();
+}
+
+export async function moveHelpStep(form: FormData) {
+  const user = await requirePermission("help.manage");
+  const id = text(form, "id"), direction = text(form, "direction");
+  if (direction !== "up" && direction !== "down") throw new Error("Direção inválida.");
+  const step = await db.helpStep.findUniqueOrThrow({ where: { id } });
+  const neighbor = await db.helpStep.findFirst({
+    where: { guideId: step.guideId, position: direction === "up" ? { lt: step.position } : { gt: step.position } },
+    orderBy: { position: direction === "up" ? "desc" : "asc" },
+  });
+  if (!neighbor) return;
+  await db.$transaction([
+    db.helpStep.update({ where: { id: step.id }, data: { position: -1 } }),
+    db.helpStep.update({ where: { id: neighbor.id }, data: { position: step.position } }),
+    db.helpStep.update({ where: { id: step.id }, data: { position: neighbor.position } }),
+  ]);
+  await audit(user.userId, "REORDER", "HelpStep", id);
+  revalidateHelp();
 }
 
 export async function savePerson(form: FormData) {

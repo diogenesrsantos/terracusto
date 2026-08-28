@@ -11,6 +11,7 @@
 | `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de centros de custo/obras |
 | `/equipamentos` | Equipamentos | `assets.manage` | Tipos, cadastro, edição e paginação de ativos |
 | `/configuracoes` | Configurações da empresa | `settings.manage` | Dados da empresa usuária e imagem dos relatórios |
+| `/ajuda` | Manuais de ajuda | `help.manage` | Criação, edição, imagens e ordenação de guias por módulo |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Configuração das contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
@@ -42,6 +43,11 @@ Na barra lateral, cada usuário pode escolher seu próprio tema de aparência:
 Verde terra, Azul oceano, Areia dourada, Violeta ou Grafite. A escolha é aplicada
 imediatamente e permanece salva para os próximos acessos daquele usuário.
 
+Quando uma página possui manual de ajuda ativo e com passos, ela mostra o botão
+“Ajuda”. O guia abre em uma janela com título, progresso, texto e imagens do
+passo, além de Anterior, Próximo e Concluir. Administradores criam os manuais em
+“Manuais de ajuda”, definindo página, situação, passos, textos e imagens.
+
 ## Perfis iniciais
 
 O seed mantém dois perfis:
@@ -51,7 +57,7 @@ O seed mantém dois perfis:
   `closing.reopen` e `settings.manage`.
 
 Novos perfis podem ser criados na tela de usuários escolhendo qualquer
-combinação das 13 permissões. Usuários existentes podem ter nome, e-mail,
+combinação das 14 permissões. Usuários existentes podem ter nome, e-mail,
 perfil, vínculo com pessoa e senha alterados; deixar a nova senha vazia preserva
 a credencial atual. Perfis ainda não possuem edição, desativação ou exclusão.
 

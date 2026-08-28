@@ -36,6 +36,7 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de obras/centros de custo |
 | `/equipamentos` | Equipamentos | `assets.manage` | Cadastro de tipos e cadastro, edição e paginação de equipamentos/ativos |
 | `/configuracoes` | Configurações da empresa | `settings.manage` | Dados institucionais, upload da imagem e prévia do cabeçalho dos relatórios |
+| `/ajuda` | Manuais de ajuda | `help.manage` | Cadastro de guias, passos ordenados, textos e imagens |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Cadastro, edição, situação, exclusão e contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtro por obra e edição |
@@ -63,6 +64,11 @@ omitidos.
 O seletor de tema na barra lateral oferece cinco paletas de cores. A preferência
 é individual, armazenada em `User.theme` e validada pelo servidor antes de ser
 gravada; a alteração é auditada como `UPDATE_THEME`.
+
+Quando há um `HelpGuide` ativo com passos para a rota atual, a interface mostra
+o botão Ajuda. O guia apresenta um passo por vez e permite avançar, voltar ou
+concluir. Imagens de `HelpStepImage` são servidas somente para usuários
+autenticados. A permissão `help.manage` controla a rota administrativa `/ajuda`.
 
 ## Fluxos e regras por módulo
 
@@ -244,7 +250,7 @@ em `SystemSettings`.
 
 ## Modelo de dados
 
-O schema possui 28 modelos:
+O schema possui 31 modelos:
 
 | Grupo | Modelo | Responsabilidade e vínculos principais |
 | --- | --- | --- |
@@ -258,6 +264,9 @@ O schema possui 28 modelos:
 | Identidade | `UserRole` | Relação muitos-para-muitos usuário/perfil |
 | Identidade | `RolePermission` | Relação muitos-para-muitos perfil/permissão |
 | Identidade | `AuditLog` | Usuário, ação, entidade, identificador, motivo, JSON, IP e data |
+| Ajuda | `HelpGuide` | Manual único por rota, título, situação e passos |
+| Ajuda | `HelpStep` | Passo ordenado com título, texto e imagens |
+| Ajuda | `HelpStepImage` | Imagem binária vinculada a um passo do manual |
 | Cadastro | `Company` | Empresa compartilhada por obras e fornecedores de combustível |
 | Configuração | `SystemSettings` | Dados únicos da empresa usuária e imagem binária dos relatórios |
 | Operação | `Work` | Obra/centro de custo e seus períodos, lançamentos e operações |
@@ -337,10 +346,12 @@ O seed cria/atualiza:
 | `20260827174500_add_second_entry_period` | Adiciona um segundo período opcional aos lançamentos para registrar jornadas com intervalo |
 | `20260827183000_add_system_settings` | Cria a configuração única da empresa, armazenamento da imagem e permissão administrativa |
 | `20260828011500_add_user_theme` | Adiciona a preferência individual de tema à configuração de cada usuário |
+| `20260828014500_add_help_guides` | Cria os manuais, passos, imagens e a permissão de administração da ajuda |
 
-Produção possui as doze migrations aplicadas, incluindo as preferências de tema
-por usuário. Nunca usar `prisma db push` em produção; mudanças de schema devem
-usar migration revisada e backup prévio.
+Produção possui as doze primeiras migrations aplicadas. A décima terceira está
+preparada localmente para os manuais de ajuda e ainda requer backup e implantação.
+Nunca usar `prisma db push` em produção; mudanças de schema devem usar migration
+revisada e backup prévio.
 
 ## Segurança, sessão e PWA
 

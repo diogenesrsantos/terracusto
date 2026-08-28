@@ -140,6 +140,32 @@ tbody tr:hover { background: #f8faf8; }
 .report-competences legend { padding: 0 .35rem; color: #3e504a; font-size: .84rem; font-weight: 650; }
 .report-competence-list { display: flex; flex-wrap: wrap; gap: .7rem 1.25rem; }
 .report-competence-list label { display: flex; align-items: center; gap: .35rem; font-size: .9rem; }
+.help-button { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 20; border: 0; border-radius: 999px; padding: .72rem 1rem; color: white; background: var(--brand); box-shadow: var(--shadow); font-weight: 800; }
+.help-button:hover { background: var(--brand-dark); }
+.help-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1rem; background: rgba(13, 25, 22, .52); }
+.help-dialog { width: min(100%, 760px); max-height: min(760px, 90vh); display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; color: var(--ink); background: var(--card); box-shadow: 0 24px 65px rgba(0, 0, 0, .28); }
+.help-dialog-head { display: flex; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.25rem; color: white; background: var(--brand); }
+.help-dialog-head span { font-size: .78rem; font-weight: 700; opacity: .82; }
+.help-dialog-head h2 { margin: .2rem 0 0; font-size: 1.25rem; }
+.help-close { width: 34px; height: 34px; border: 0; border-radius: 50%; color: white; background: rgba(255,255,255,.18); font-size: 1.4rem; line-height: 1; }
+.help-step { overflow: auto; padding: 1.25rem; }
+.help-step h3 { margin: 0 0 .65rem; font-size: 1.15rem; }
+.help-step p { margin: 0; white-space: pre-wrap; line-height: 1.6; }
+.help-images { display: grid; gap: .8rem; margin-top: 1rem; }
+.help-images img { width: 100%; max-height: 400px; object-fit: contain; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.help-dialog-actions { display: flex; justify-content: space-between; gap: .65rem; padding: 1rem 1.25rem; border-top: 1px solid var(--line); }
+.help-guide-list { display: grid; gap: .55rem; }
+.help-guide-item { display: grid; gap: .18rem; width: 100%; padding: .8rem; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: transparent; text-align: left; }
+.help-guide-item:hover, .help-guide-item.selected { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 8%, transparent); }
+.help-guide-item span { color: var(--muted); font-size: .83rem; }
+.help-step-editor { margin-top: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.help-step-editor h3 { margin-top: 0; }
+.help-step-editor-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .8rem; }
+.help-step-image-list { display: flex; flex-wrap: wrap; gap: .7rem; }
+.help-step-image-list figure { width: 150px; margin: 0; }
+.help-step-image-list img { width: 150px; height: 95px; display: block; object-fit: cover; border: 1px solid var(--line); border-radius: 7px; }
+.help-step-image-list figcaption { display: grid; gap: .15rem; margin-top: .25rem; color: var(--muted); font-size: .72rem; overflow-wrap: anywhere; }
+.danger-text { color: var(--danger); }
 @media print {
   @page { margin: 12mm; }
   body { background: white; }
@@ -172,4 +198,7 @@ tbody tr:hover { background: #f8faf8; }
   .report-header { grid-template-columns: 110px 1fr; }
   .report-image-slot { width: 110px; height: 72px; }
   .report-header h1 { grid-column: 1 / -1; text-align: left; }
+  .help-button { right: 1rem; bottom: 1rem; }
+  .help-dialog { max-height: 92vh; }
+  .help-step-editor-head { align-items: flex-start; flex-direction: column; }
 }

@@ -73,10 +73,11 @@ de `Work.client` e substitui o texto pela chave estrangeira.
 
 ## Domínios de dados
 
-O schema possui 28 modelos, agrupados assim:
+O schema possui 31 modelos, agrupados assim:
 
 - Identidade: `Person`, `JobFunction`, `Activity`, `PersonActivity`, `User`, `Role`,
   `Permission`, `UserRole`, `RolePermission` e `AuditLog`.
+- Ajuda: `HelpGuide`, `HelpStep` e `HelpStepImage`.
 - Cadastros e operação: `Company`, `SystemSettings`, `Work`, `EquipmentType` e
   `Asset`.
 - Contabilidade: `Account`, `AccountingEntry`, `AccountingLine`,
@@ -107,6 +108,11 @@ imagem à esquerda.
 componente cliente para aplicar a paleta imediatamente e `saveTheme` valida a
 opção, persiste a escolha e registra auditoria. As paletas ficam em
 `lib/themes.ts`; o tema padrão é `forest`.
+
+Os manuais contextuais usam `HelpGuide.pageKey` como chave única da rota. Os
+passos são ordenados por `position`; cada passo pode conter diversas imagens
+binárias. O layout consulta somente manuais ativos, exibe Ajuda quando houver
+passos e entrega as imagens por rota autenticada. A edição exige `help.manage`.
 
 `/relatorios/centro-custos` é uma página autenticada por `accounting.manage` e
 consulta lançamentos por obra ativa e competência. O modo resumido agrega
