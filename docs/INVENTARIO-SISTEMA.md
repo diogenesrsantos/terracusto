@@ -338,9 +338,8 @@ O seed cria/atualiza:
 | `20260827183000_add_system_settings` | Cria a configuração única da empresa, armazenamento da imagem e permissão administrativa |
 | `20260828011500_add_user_theme` | Adiciona a preferência individual de tema à configuração de cada usuário |
 
-Produção possui as onze primeiras migrations aplicadas. A décima segunda está
-preparada localmente para armazenar os temas dos usuários e ainda requer backup
-e implantação. Nunca usar `prisma db push` em produção; mudanças de schema devem
+Produção possui as doze migrations aplicadas, incluindo as preferências de tema
+por usuário. Nunca usar `prisma db push` em produção; mudanças de schema devem
 usar migration revisada e backup prévio.
 
 ## Segurança, sessão e PWA

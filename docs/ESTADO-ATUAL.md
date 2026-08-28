@@ -7,11 +7,16 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 28 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
-Alteração local pendente de implantação em 28/08/2026: o sistema de temas
-permite que cada usuário escolha Verde terra, Azul oceano, Areia dourada,
-Violeta ou Grafite pela barra lateral. A migration
-`20260828011500_add_user_theme` adiciona a preferência individual ao usuário;
-produção permanece com as 11 migrations anteriores.
+Em 28/08/2026, o sistema de temas passou a permitir que cada usuário escolha
+Verde terra, Azul oceano, Areia dourada, Violeta ou Grafite pela barra lateral.
+A migration `20260828011500_add_user_theme` adicionou a preferência individual
+ao usuário.
+
+Implantação validada em 28/08/2026: backup pré-migration
+`terracusto-20260827-221048.dump` (94.671 bytes), 12 migrations aplicadas sem
+pendências, build remoto aprovado com 23 rotas, serviço ativo desde 22:15 -03 e
+health check com aplicação e banco `ok`. O domínio público respondeu HTTP 307
+para `/login` e o timer de backup permaneceu ativo.
 
 Em 27/08/2026, foi criada a rota `/configuracoes` para os dados da empresa
 usuária e o upload autenticado da imagem padrão dos relatórios. O componente
