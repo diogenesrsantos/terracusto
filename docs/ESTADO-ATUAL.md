@@ -7,6 +7,12 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 28 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
+Alteração local pendente de implantação em 28/08/2026: o sistema de temas
+permite que cada usuário escolha Verde terra, Azul oceano, Areia dourada,
+Violeta ou Grafite pela barra lateral. A migration
+`20260828011500_add_user_theme` adiciona a preferência individual ao usuário;
+produção permanece com as 11 migrations anteriores.
+
 Em 27/08/2026, foi criada a rota `/configuracoes` para os dados da empresa
 usuária e o upload autenticado da imagem padrão dos relatórios. O componente
 `ReportHeader` posiciona a imagem à esquerda e reúne os dados institucionais. A

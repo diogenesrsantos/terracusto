@@ -2,6 +2,9 @@ import Link from "next/link";
 import { getPermissions, requireUser } from "@/lib/auth";
 import { logout } from "@/app/actions";
 import { SidebarNav } from "@/components/sidebar-nav";
+import { ThemeSelector } from "@/components/theme-selector";
+import { isThemeName } from "@/lib/themes";
+import { db } from "@/lib/db";
 
 const directItems = [["dashboard.view", "/", "Visão geral"]] as const;
 const groups = [
@@ -24,13 +27,17 @@ const groups = [
 ] as const;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireUser(); const permissions = await getPermissions(user.userId);
+  const user = await requireUser(); const [permissions, preferences] = await Promise.all([
+    getPermissions(user.userId), db.user.findUnique({ where: { id: user.userId }, select: { theme: true } }),
+  ]);
+  const theme = preferences && isThemeName(preferences.theme) ? preferences.theme : "forest";
   const visibleGroups = groups.map((group) => ({ label: group.label, items: group.items
     .filter(([permission]) => permissions.has(permission))
     .map(([, href, label]) => ({ href, label })) })).filter((group) => group.items.length > 0);
-  return <div className="app-shell"><aside className="sidebar">
+  return <div className="app-shell" data-theme={theme}><aside className="sidebar">
     <Link href="/" className="logo"><span className="logo-mark">T</span><span>TerraCusto</span></Link>
     <SidebarNav directItems={directItems.filter(([permission]) => permissions.has(permission)).map(([, href, label]) => ({ href, label }))} groups={visibleGroups} />
+    <ThemeSelector initialTheme={theme} />
     <div className="sidebar-user"><div><strong>{user.name}</strong>{user.email}<br /><Link href="/perfil" className="link-button">Minha senha</Link></div><form action={logout}><button className="link-button">Sair</button></form></div>
   </aside><main className="main">{children}</main></div>;
 }

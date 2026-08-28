@@ -60,6 +60,10 @@ automaticamente, o subitem recebe destaque e os gatilhos são acessíveis por
 teclado e tecnologias assistivas. Grupos sem nenhum item permitido são
 omitidos.
 
+O seletor de tema na barra lateral oferece cinco paletas de cores. A preferência
+é individual, armazenada em `User.theme` e validada pelo servidor antes de ser
+gravada; a alteração é auditada como `UPDATE_THEME`.
+
 ## Fluxos e regras por módulo
 
 ### Pessoas e acesso
@@ -332,10 +336,12 @@ O seed cria/atualiza:
 | `20260827141000_unify_companies` | Unifica clientes e fornecedores em `Company`, vincula obras e cria a permissão de empresas |
 | `20260827174500_add_second_entry_period` | Adiciona um segundo período opcional aos lançamentos para registrar jornadas com intervalo |
 | `20260827183000_add_system_settings` | Cria a configuração única da empresa, armazenamento da imagem e permissão administrativa |
+| `20260828011500_add_user_theme` | Adiciona a preferência individual de tema à configuração de cada usuário |
 
-Produção possui as onze migrations aplicadas, incluindo as configurações da
-empresa. Nunca usar `prisma db push` em produção; mudanças de schema devem usar
-migration revisada e backup prévio.
+Produção possui as onze primeiras migrations aplicadas. A décima segunda está
+preparada localmente para armazenar os temas dos usuários e ainda requer backup
+e implantação. Nunca usar `prisma db push` em produção; mudanças de schema devem
+usar migration revisada e backup prévio.
 
 ## Segurança, sessão e PWA
 

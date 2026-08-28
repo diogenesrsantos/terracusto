@@ -38,6 +38,10 @@ correspondente abre automaticamente e destaca o subitem atual. Cada grupo pode
 ser expandido ou contraído pelo clique e expõe seu estado para tecnologias
 assistivas.
 
+Na barra lateral, cada usuário pode escolher seu próprio tema de aparência:
+Verde terra, Azul oceano, Areia dourada, Violeta ou Grafite. A escolha é aplicada
+imediatamente e permanece salva para os próximos acessos daquele usuário.
+
 ## Perfis iniciais
 
 O seed mantém dois perfis:

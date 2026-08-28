@@ -103,6 +103,11 @@ binário com `nosniff`; uploads aceitam somente PNG, JPEG e WebP, limitados a 2
 MB. `components/report-header.tsx` centraliza o cabeçalho imprimível e mantém a
 imagem à esquerda.
 
+`User.theme` guarda a preferência visual individual. A barra lateral usa um
+componente cliente para aplicar a paleta imediatamente e `saveTheme` valida a
+opção, persiste a escolha e registra auditoria. As paletas ficam em
+`lib/themes.ts`; o tema padrão é `forest`.
+
 `/relatorios/centro-custos` é uma página autenticada por `accounting.manage` e
 consulta lançamentos por obra ativa e competência. O modo resumido agrega
 quantidade, horas e valor no servidor; o modo detalhado exibe lançamentos,

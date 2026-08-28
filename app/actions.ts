@@ -10,6 +10,7 @@ import { audit } from "@/lib/audit";
 import { clearSession, createSession, requirePermission, requireUser } from "@/lib/auth";
 import { businessToday, monthStart } from "@/lib/format";
 import { checkLoginRate, recordLoginFailure, resetLoginRate } from "@/lib/rate-limit";
+import { isThemeName } from "@/lib/themes";
 
 const text = (form: FormData, key: string) => String(form.get(key) || "").trim();
 const optional = (form: FormData, key: string) => text(form, key) || null;
@@ -71,6 +72,14 @@ export async function changePassword(form: FormData) {
   await db.user.update({ where: { id: user.id }, data: { passwordHash: await hash(newPassword, 12) } });
   await audit(user.id, "CHANGE_PASSWORD", "User", user.id);
   redirect("/perfil?ok=1");
+}
+
+export async function saveTheme(theme: string) {
+  const user = await requireUser();
+  if (!isThemeName(theme)) throw new Error("Tema inválido.");
+  await db.user.update({ where: { id: user.userId }, data: { theme } });
+  await audit(user.userId, "UPDATE_THEME", "User", user.userId, { theme });
+  revalidatePath("/", "layout");
 }
 
 export async function savePerson(form: FormData) {
