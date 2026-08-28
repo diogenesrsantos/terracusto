@@ -97,6 +97,12 @@ de gravação valida pares completos, ordem e ausência de sobreposição e pers
 em `hours` a soma decimal dos dois intervalos. Registros com apenas o primeiro
 período e registros legados sem horários permanecem válidos.
 
+`EntryType.requiresAsset` e `EntryType.requiresPerson` definem as referências
+operacionais exigidas pelo lançamento. A interface mostra o grupo de equipamento
+e jornada somente se ao menos um indicador estiver ativo; no servidor, a ação de
+gravação também exige a referência correspondente e confirma que o cadastro está
+ativo.
+
 `SystemSettings` é um singleton identificado por `default`. Além dos dados
 institucionais, guarda a imagem de relatórios como `Bytes` e seu MIME type no
 PostgreSQL. A rota autenticada `/api/configuracoes/imagem-relatorio` entrega o

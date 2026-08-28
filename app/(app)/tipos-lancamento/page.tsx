@@ -17,6 +17,8 @@ export default async function EntryTypesPage() {
       id: entryType.id,
       name: entryType.name,
       active: entryType.active,
+      requiresAsset: entryType.requiresAsset,
+      requiresPerson: entryType.requiresPerson,
       defaultDebitAccountId: entryType.defaultDebitAccountId,
       defaultCreditAccountId: entryType.defaultCreditAccountId,
       defaultDebitAccountLabel: `${entryType.defaultDebitAccount.code} — ${entryType.defaultDebitAccount.name}`,

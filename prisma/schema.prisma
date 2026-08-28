@@ -278,6 +278,8 @@ model EntryType {
   id                     String            @id @default(cuid())
   name                   String            @unique
   active                 Boolean           @default(true)
+  requiresAsset          Boolean           @default(false)
+  requiresPerson         Boolean           @default(false)
   defaultDebitAccountId  String
   defaultCreditAccountId String
   createdAt              DateTime          @default(now())

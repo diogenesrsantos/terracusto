@@ -369,6 +369,8 @@ export async function saveEntryType(form: FormData) {
   const data = {
     name: text(form, "name"), defaultDebitAccountId, defaultCreditAccountId,
     active: id ? text(form, "active") === "true" : true,
+    requiresAsset: form.get("requiresAsset") === "true",
+    requiresPerson: form.get("requiresPerson") === "true",
   };
   const row = id
     ? await db.entryType.update({ where: { id }, data })
@@ -428,7 +430,7 @@ export async function saveEntry(form: FormData) {
     await assertOpen(existing.workId, existing.date);
   }
   const entryTypeId = text(form, "entryTypeId");
-  const entryType = await db.entryType.findFirst({ where: { id: entryTypeId, active: true }, select: { id: true } });
+  const entryType = await db.entryType.findFirst({ where: { id: entryTypeId, active: true }, select: { id: true, requiresAsset: true, requiresPerson: true } });
   if (!entryType) throw new Error("Selecione um tipo de lançamento ativo.");
   const competence = await assertOpen(workId, date);
   const amount = decimal(form, "amount");
@@ -437,6 +439,15 @@ export async function saveEntry(form: FormData) {
   if (amount.lte(0) || debitAccountId === creditAccountId) throw new Error("Valor e contas do lançamento são inválidos.");
   const accounts = await db.account.count({ where: { id: { in: [debitAccountId, creditAccountId] }, active: true, analytic: true } });
   if (accounts !== 2) throw new Error("Use duas contas analíticas ativas.");
+  const assetId = optional(form, "assetId");
+  const personId = optional(form, "personId");
+  if (entryType.requiresAsset && !assetId) throw new Error("Este tipo de lançamento exige um equipamento.");
+  if (entryType.requiresPerson && !personId) throw new Error("Este tipo de lançamento exige um operador/motorista.");
+  const [assetCount, personCount] = await Promise.all([
+    assetId ? db.asset.count({ where: { id: assetId, active: true } }) : 1,
+    personId ? db.person.count({ where: { id: personId, active: true } }) : 1,
+  ]);
+  if (assetCount !== 1 || personCount !== 1) throw new Error("Selecione equipamento e operador/motorista ativos.");
   let startAt: Date | null = null, endAt: Date | null = null;
   let secondStartAt: Date | null = null, secondEndAt: Date | null = null;
   let hours: Prisma.Decimal | null = null;
@@ -465,7 +476,7 @@ export async function saveEntry(form: FormData) {
   if (elapsedMilliseconds > 0) hours = new Prisma.Decimal(elapsedMilliseconds / 3_600_000);
   const data = {
     date, competence, history: text(form, "history"), document: optional(form, "document"), workId,
-    personId: optional(form, "personId"), assetId: optional(form, "assetId"), entryTypeId,
+    personId, assetId, entryTypeId,
     startAt, endAt, secondStartAt, secondEndAt, hours,
     lines: { create: [
       { accountId: debitAccountId, debit: amount, credit: 0 },

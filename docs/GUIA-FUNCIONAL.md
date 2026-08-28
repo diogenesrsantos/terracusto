@@ -146,11 +146,14 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   formulário preserva obra, data, tipo, histórico, documento, contas,
   equipamento e pessoa. Somente valor cobrado e as horas dos dois períodos são
   limpos, e o formulário retorna ao modo de novo lançamento.
-- O formulário organiza obra, competência e data na primeira linha; equipamento e
-  operador na segunda; os dois períodos e o total de horas na terceira;
-  histórico, documento e valor na quarta; tipo e contas na quinta.
-- Para facilitar a leitura, essas linhas são separadas visualmente em três
-  grupos: Obra e equipe; Jornada e valores; Classificação contábil.
+- Cada tipo de lançamento informa se envolve equipamento, operador/motorista ou
+  ambos. Ao selecionar um tipo sem essas referências, o grupo de equipamento e
+  jornada não é exibido. Quando a referência é exigida, o respectivo campo passa
+  a ser obrigatório.
+- O formulário fica organizado em três grupos: **Obra e lançamento** (obra,
+  competência, data, histórico opcional, documento e valor), **Classificação
+  contábil** (tipo e contas) e, quando necessário, **Equipamento e jornada**
+  (equipamento, operador, os dois períodos e total de horas).
 - A listagem do Centro de custos mostra somente os lançamentos da obra
   selecionada, em páginas de até 20 registros. Ao clicar ou usar Enter/Espaço
   em uma linha, o lançamento é carregado para edição. Os controles Anterior e

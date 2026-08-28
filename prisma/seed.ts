@@ -92,19 +92,19 @@ async function main() {
   }
 
   const entryTypes = [
-    ["Serviço de máquinas", "1.2", "3.1.1"],
-    ["Reembolso de alimentação", "1.2", "3.2.1"],
-    ["Alimentação paga", "4.5", "1.1"],
+    ["Serviço de máquinas", "1.2", "3.1.1", true, true],
+    ["Reembolso de alimentação", "1.2", "3.2.1", false, false],
+    ["Alimentação paga", "4.5", "1.1", false, false],
   ] as const;
-  for (const [name, debitCode, creditCode] of entryTypes) {
+  for (const [name, debitCode, creditCode, requiresAsset, requiresPerson] of entryTypes) {
     const [debit, credit] = await Promise.all([
       db.account.findUniqueOrThrow({ where: { code: debitCode } }),
       db.account.findUniqueOrThrow({ where: { code: creditCode } }),
     ]);
     await db.entryType.upsert({
       where: { name },
-      update: { active: true, defaultDebitAccountId: debit.id, defaultCreditAccountId: credit.id },
-      create: { name, defaultDebitAccountId: debit.id, defaultCreditAccountId: credit.id },
+      update: { active: true, defaultDebitAccountId: debit.id, defaultCreditAccountId: credit.id, requiresAsset, requiresPerson },
+      create: { name, defaultDebitAccountId: debit.id, defaultCreditAccountId: credit.id, requiresAsset, requiresPerson },
     });
   }
 

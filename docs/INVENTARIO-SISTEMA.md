@@ -132,9 +132,10 @@ autenticados. A permissão `help.manage` controla a rota administrativa `/ajuda`
   colocada dentro dela mesma ou de suas descendentes.
 - Somente contas analíticas, ativas e distintas podem ser usadas nas partidas
   criadas pelo Centro de custos.
-- Tipo de lançamento é um cadastro livre com nome único, situação e contas
-  devedora e credora padrão. As contas são sugeridas ao selecionar o tipo, mas
-  podem ser trocadas no lançamento.
+- Tipo de lançamento é um cadastro livre com nome único, situação, contas
+  devedora e credora padrão e indicadores de referência a equipamento e/ou
+  operador/motorista. As contas são sugeridas ao selecionar o tipo, mas podem
+  ser trocadas no lançamento.
 - A manutenção dos tipos utiliza uma página contábil própria. Isso mantém o
   Centro de custos dedicado à rotina frequente de lançar e consultar registros.
 - Tipo sem uso pode ser excluído. Se já foi usado, a exclusão solicitada apenas
@@ -154,18 +155,18 @@ autenticados. A permissão `help.manage` controla a rota administrativa `/ajuda`
 - Cada lançamento pertence a uma obra e a um tipo ativo e gera exatamente duas
   linhas de mesmo valor: uma de débito e uma de crédito.
 - Campos: obra, competência exibida, data, tipo, histórico opcional, documento,
-  contas, valor, equipamento opcional, pessoa opcional, primeiro período e
+  contas, valor e, conforme o tipo, equipamento, pessoa, primeiro período e
   segundo período opcional.
 - A obra selecionada é persistida no navegador na chave
   `terracusto.defaultWorkId` e também fica na URL como `workId`.
 - Para lançamentos em grupo, após criar ou alterar um registro o formulário
   mantém obra, data, tipo, histórico, documento, contas, equipamento e pessoa.
   Somente valor cobrado e os horários dos dois períodos são limpos.
-- A apresentação agrupa o formulário em cinco linhas: obra/competência/data;
-  equipamento/operador; horários e total; histórico/documento/valor; tipo
-  e contas.
-- As cinco linhas aparecem dentro de três caixas visuais: Obra e equipe, Jornada
-  e valores e Classificação contábil.
+- A apresentação usa três caixas visuais: Obra e lançamento
+  (obra/competência/data e histórico/documento/valor), Classificação contábil
+  (tipo e contas) e Equipamento e jornada. A última contém equipamento,
+  operador, horários e total e só é exibida quando o tipo requer equipamento
+  e/ou operador/motorista.
 - Os horários recebem apenas `HH:mm`; não se informa outra data. Cada período
   preenchido exige início e final, e o segundo período só pode existir junto do
   primeiro. O final deve ser posterior ao início, os períodos não podem se
@@ -273,7 +274,7 @@ O schema possui 31 modelos:
 | Operação | `EquipmentType` | Catálogo de tipos de equipamento |
 | Operação | `Asset` | Máquina, veículo, ferramenta ou outro ativo |
 | Contabilidade | `Account` | Plano hierárquico de contas, natureza e classificação |
-| Contabilidade | `EntryType` | Tipo de lançamento e contas padrão |
+| Contabilidade | `EntryType` | Tipo de lançamento, contas padrão e exigências de equipamento/operador |
 | Contabilidade | `AccountingEntry` | Cabeçalho do lançamento por obra, tipo, pessoa/equipamento e horas |
 | Contabilidade | `AccountingLine` | Linha de débito ou crédito vinculada a conta e lançamento |
 | Contabilidade | `AccountingPeriod` | Estado aberto/fechado da competência por obra |
@@ -347,8 +348,11 @@ O seed cria/atualiza:
 | `20260827183000_add_system_settings` | Cria a configuração única da empresa, armazenamento da imagem e permissão administrativa |
 | `20260828011500_add_user_theme` | Adiciona a preferência individual de tema à configuração de cada usuário |
 | `20260828014500_add_help_guides` | Cria os manuais, passos, imagens e a permissão de administração da ajuda |
+| `20260828183000_add_entry_type_references` | Adiciona ao tipo de lançamento os indicadores de equipamento e operador/motorista e configura Serviço de máquinas com ambos |
 
-Produção possui as treze migrations aplicadas, incluindo os manuais de ajuda.
+Produção possui as treze migrations aplicadas, incluindo os manuais de ajuda. A
+migration de referências do tipo de lançamento está preparada localmente para a
+próxima implantação.
 Nunca usar `prisma db push` em produção; mudanças de schema devem usar migration
 revisada e backup prévio.
 

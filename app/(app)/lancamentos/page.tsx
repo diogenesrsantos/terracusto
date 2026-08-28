@@ -79,6 +79,8 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
         id: entryType.id, label: entryType.name,
         defaultDebitAccountId: entryType.defaultDebitAccountId,
         defaultCreditAccountId: entryType.defaultCreditAccountId,
+        requiresAsset: entryType.requiresAsset,
+        requiresPerson: entryType.requiresPerson,
       }))}
     />
   </>;

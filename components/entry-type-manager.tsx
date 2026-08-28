@@ -9,6 +9,8 @@ export type EntryTypeItem = {
   id: string;
   name: string;
   active: boolean;
+  requiresAsset: boolean;
+  requiresPerson: boolean;
   defaultDebitAccountId: string;
   defaultCreditAccountId: string;
   defaultDebitAccountLabel: string;
@@ -35,11 +37,12 @@ export function EntryTypeManager({ entryTypes, accounts }: { entryTypes: EntryTy
       <label className="field">Nome<input name="name" defaultValue={selected?.name || ""} placeholder="Ex.: Serviço de transporte" required /></label>
       <label className="field">Conta devedora padrão<select name="defaultDebitAccountId" defaultValue={selected?.defaultDebitAccountId || ""} required><option value="">Selecione</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select></label>
       <label className="field">Conta credora padrão<select name="defaultCreditAccountId" defaultValue={selected?.defaultCreditAccountId || ""} required><option value="">Selecione</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select></label>
+      <div className="grid grid-2"><label><input className="inline-checkbox" name="requiresAsset" type="checkbox" value="true" defaultChecked={selected?.requiresAsset || false} />Envolve equipamento</label><label><input className="inline-checkbox" name="requiresPerson" type="checkbox" value="true" defaultChecked={selected?.requiresPerson || false} />Envolve operador/motorista</label></div>
       {selected && <label className="field">Situação<select name="active" defaultValue={String(selected.active)}><option value="true">Ativo</option><option value="false">Inativo</option></select></label>}
       <div className="form-actions">{selected && <button className="btn secondary" type="button" onClick={() => setSelected(null)}>Cancelar alteração</button>}<button className="btn">{selected ? "Salvar tipo" : "Cadastrar tipo"}</button></div>
     </form></div>
-    <div className="card"><h2>Tipos cadastrados</h2>{entryTypes.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Tipo</th><th>Contas padrão</th><th>Situação</th><th>Ações</th></tr></thead><tbody>{entryTypes.map((entryType) => <tr key={entryType.id} className={`selectable-row${selected?.id === entryType.id ? " selected" : ""}`} onClick={() => setSelected(entryType)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(entryType); } }} role="button" tabIndex={0} aria-selected={selected?.id === entryType.id}>
-      <td><strong>{entryType.name}</strong></td><td><small>D · {entryType.defaultDebitAccountLabel}</small><br /><small>C · {entryType.defaultCreditAccountLabel}</small></td><td><span className={`badge ${entryType.active ? "" : "warn"}`}>{entryType.active ? "Ativo" : "Inativo"}</span></td><td><form action={removeEntryType} onClick={(event) => event.stopPropagation()}><input type="hidden" name="id" value={entryType.id} /><button className="btn danger">Excluir</button></form></td>
+    <div className="card"><h2>Tipos cadastrados</h2>{entryTypes.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Tipo</th><th>Referências</th><th>Contas padrão</th><th>Situação</th><th>Ações</th></tr></thead><tbody>{entryTypes.map((entryType) => <tr key={entryType.id} className={`selectable-row${selected?.id === entryType.id ? " selected" : ""}`} onClick={() => setSelected(entryType)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(entryType); } }} role="button" tabIndex={0} aria-selected={selected?.id === entryType.id}>
+      <td><strong>{entryType.name}</strong></td><td>{entryType.requiresAsset ? "Equipamento" : ""}{entryType.requiresAsset && entryType.requiresPerson ? <br /> : ""}{entryType.requiresPerson ? "Operador/motorista" : ""}{!entryType.requiresAsset && !entryType.requiresPerson ? "Nenhuma" : ""}</td><td><small>D · {entryType.defaultDebitAccountLabel}</small><br /><small>C · {entryType.defaultCreditAccountLabel}</small></td><td><span className={`badge ${entryType.active ? "" : "warn"}`}>{entryType.active ? "Ativo" : "Inativo"}</span></td><td><form action={removeEntryType} onClick={(event) => event.stopPropagation()}><input type="hidden" name="id" value={entryType.id} /><button className="btn danger">Excluir</button></form></td>
     </tr>)}</tbody></table></div>}</div>
   </section>;
 }
