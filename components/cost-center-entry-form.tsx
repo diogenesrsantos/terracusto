@@ -83,6 +83,7 @@ export function CostCenterEntryForm({
   const [endTime, setEndTime] = useState("");
   const [secondStartTime, setSecondStartTime] = useState("");
   const [secondEndTime, setSecondEndTime] = useState("");
+  const [formVersion, setFormVersion] = useState(0);
   const [editing, setEditing] = useState<CostCenterEntryItem | null>(null);
   const selectedWork = useMemo(() => works.find((work) => work.id === workId), [workId, works]);
   const elapsedMinutes = useMemo(() => {
@@ -124,6 +125,7 @@ export function CostCenterEntryForm({
       setWorkId(initialWorkId);
       window.localStorage.setItem("terracusto.defaultWorkId", initialWorkId);
       applyDraft(readDraft(initialWorkId));
+      setFormVersion((version) => version + 1);
       return;
     }
     const saved = window.localStorage.getItem("terracusto.defaultWorkId") || "";
@@ -187,13 +189,16 @@ export function CostCenterEntryForm({
     };
     window.localStorage.setItem(draftKey(submittedWorkId), JSON.stringify(draft));
     await saveEntry(form);
-    applyDraft(draft);
-    setEditing(null);
-    setAmount("");
-    setStartTime("");
-    setEndTime("");
-    setSecondStartTime("");
-    setSecondEndTime("");
+    window.setTimeout(() => {
+      applyDraft(draft);
+      setEditing(null);
+      setAmount("");
+      setStartTime("");
+      setEndTime("");
+      setSecondStartTime("");
+      setSecondEndTime("");
+      setFormVersion((version) => version + 1);
+    }, 0);
   }
 
   function cancelEditing() {
@@ -205,7 +210,7 @@ export function CostCenterEntryForm({
     setSecondEndTime("");
   }
 
-  return <><section className="card"><h2>{editing ? "Alteração de lançamento" : "Novo lançamento"}</h2><form action={submitEntry} className="form-grid">
+  return <><section className="card"><h2>{editing ? "Alteração de lançamento" : "Novo lançamento"}</h2><form key={formVersion} action={submitEntry} className="form-grid">
     <input type="hidden" name="id" value={editing?.id || ""} />
     <fieldset className="entry-group span-4"><legend>Obra e equipe</legend>
       <div className="entry-row entry-row-2">
@@ -221,12 +226,12 @@ export function CostCenterEntryForm({
         <label className="field">Data<input name="date" type="date" min={selectedWork?.competence} max={today} value={date} onChange={(event) => setDate(event.target.value)} required /></label>
         <label className="field">Hora de início<input name="startTime" type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
         <label className="field">Hora final<input name="endTime" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
-        <label className="field">Segundo início <span className="muted">(opcional)</span><input name="secondStartTime" type="time" value={secondStartTime} onChange={(event) => setSecondStartTime(event.target.value)} /></label>
-        <label className="field">Segundo final <span className="muted">(opcional)</span><input name="secondEndTime" type="time" value={secondEndTime} onChange={(event) => setSecondEndTime(event.target.value)} /></label>
+        <label className="field"><span className="nowrap-label">Segundo início - opc.</span><input name="secondStartTime" type="time" value={secondStartTime} onChange={(event) => setSecondStartTime(event.target.value)} /></label>
+        <label className="field"><span className="nowrap-label">Segundo final - opc.</span><input name="secondEndTime" type="time" value={secondEndTime} onChange={(event) => setSecondEndTime(event.target.value)} /></label>
         <label className="field">Total de horas<output className="elapsed-total" aria-live="polite">{elapsedMinutes !== null ? <>{Math.floor(elapsedMinutes / 60)}h{elapsedMinutes % 60 ? ` ${elapsedMinutes % 60}min` : ""}</> : "—"}</output></label>
       </div>
       <div className="entry-row entry-row-history">
-        <label className="field">Histórico <span className="muted">(opcional)</span><input name="history" value={history} onChange={(event) => setHistory(event.target.value)} /></label>
+        <label className="field"><span className="nowrap-label">Histórico - opc.</span><input name="history" value={history} onChange={(event) => setHistory(event.target.value)} /></label>
         <label className="field">Documento<input name="document" value={document} onChange={(event) => setDocument(event.target.value)} /></label>
         <label className="field">Valor cobrado (R$)<input name="amount" type="number" step="0.01" min="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required /></label>
       </div>
