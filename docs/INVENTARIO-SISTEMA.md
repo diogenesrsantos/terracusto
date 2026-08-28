@@ -161,8 +161,8 @@ autenticados. A permissão `help.manage` controla a rota administrativa `/ajuda`
 - Para lançamentos em grupo, após criar ou alterar um registro o formulário
   mantém obra, data, tipo, histórico, documento, contas, equipamento e pessoa.
   Somente valor cobrado e os horários dos dois períodos são limpos.
-- A apresentação agrupa o formulário em cinco linhas: obra/competência;
-  equipamento/operador; data, horários e total; histórico/documento/valor; tipo
+- A apresentação agrupa o formulário em cinco linhas: obra/competência/data;
+  equipamento/operador; horários e total; histórico/documento/valor; tipo
   e contas.
 - As cinco linhas aparecem dentro de três caixas visuais: Obra e equipe, Jornada
   e valores e Classificação contábil.

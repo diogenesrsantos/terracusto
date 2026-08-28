@@ -213,9 +213,12 @@ export function CostCenterEntryForm({
   return <><section className="card"><h2>{editing ? "Alteração de lançamento" : "Novo lançamento"}</h2><form key={formVersion} action={submitEntry} className="form-grid">
     <input type="hidden" name="id" value={editing?.id || ""} />
     <fieldset className="entry-group span-4"><legend>Obra e equipe</legend>
-      <div className="entry-row entry-row-2">
+      <div className="entry-row entry-row-work">
         <label className="field">Obra<select name="workId" required value={workId} onChange={(event) => selectWork(event.target.value)}><option value="">Selecione</option>{works.map((work) => <option key={work.id} value={work.id}>{work.label}</option>)}</select></label>
         <label className="field">Competência<input value={selectedWork?.competence.slice(0, 7) || ""} placeholder="Selecione a obra" readOnly /></label>
+        <label className="field">Data<input name="date" type="date" min={selectedWork?.competence} max={today} value={date} onChange={(event) => setDate(event.target.value)} required disabled={!selectedWork || selectedWork.blocked} /></label>
+      </div>
+      <div className="entry-row entry-row-2">
         <label className="field">Equipamento<select name="assetId" value={assetId} onChange={(event) => setAssetId(event.target.value)} disabled={!selectedWork || selectedWork.blocked}><option value="">Não se aplica</option>{assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.label}</option>)}</select></label>
         <label className="field">Operador/motorista<select name="personId" value={personId} onChange={(event) => setPersonId(event.target.value)} disabled={!selectedWork || selectedWork.blocked}><option value="">Não se aplica</option>{people.map((person) => <option key={person.id} value={person.id}>{person.label}</option>)}</select></label>
       </div>
@@ -223,7 +226,6 @@ export function CostCenterEntryForm({
     {selectedWork?.blocked && <p className="error span-4">A competência desta obra venceu. <Link href="/fechamentos"><strong>Feche a competência pendente</strong></Link> para liberar o mês vigente.</p>}
     <fieldset className="entry-group span-4" disabled={!selectedWork || selectedWork.blocked}><legend>Jornada e valores</legend>
       <div className="entry-row entry-row-hours">
-        <label className="field">Data<input name="date" type="date" min={selectedWork?.competence} max={today} value={date} onChange={(event) => setDate(event.target.value)} required /></label>
         <label className="field">Hora de início<input name="startTime" type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} /></label>
         <label className="field">Hora final<input name="endTime" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
         <label className="field"><span className="nowrap-label">Segundo início - opc.</span><input name="secondStartTime" type="time" value={secondStartTime} onChange={(event) => setSecondStartTime(event.target.value)} /></label>

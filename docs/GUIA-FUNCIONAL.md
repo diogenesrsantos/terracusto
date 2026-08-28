@@ -146,8 +146,8 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   formulário preserva obra, data, tipo, histórico, documento, contas,
   equipamento e pessoa. Somente valor cobrado e as horas dos dois períodos são
   limpos, e o formulário retorna ao modo de novo lançamento.
-- O formulário organiza obra e competência na primeira linha; equipamento e
-  operador na segunda; data, os dois períodos e o total de horas na terceira;
+- O formulário organiza obra, competência e data na primeira linha; equipamento e
+  operador na segunda; os dois períodos e o total de horas na terceira;
   histórico, documento e valor na quarta; tipo e contas na quinta.
 - Para facilitar a leitura, essas linhas são separadas visualmente em três
   grupos: Obra e equipe; Jornada e valores; Classificação contábil.

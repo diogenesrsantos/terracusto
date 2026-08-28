@@ -67,7 +67,8 @@ button { cursor: pointer; }
 .entry-group > .entry-row + .entry-row { margin-top: .8rem; }
 .entry-group > .form-actions { margin-top: .9rem; }
 .entry-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.entry-row-hours { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.entry-row-work { grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); }
+.entry-row-hours { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .entry-row-history { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); }
 .entry-row-accounts { grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); }
 .elapsed-total { display: flex; align-items: center; min-height: 41px; padding: .68rem .75rem; border: 1px solid #b9d5ea; border-radius: 8px; color: #1769aa; background: #eef7fd; font-size: .95rem; font-weight: 800; }
@@ -181,7 +182,7 @@ tbody tr:hover { background: #f8faf8; }
   .report-header { break-inside: avoid; }
   .report-image-slot { border: 0; background: transparent; }
 }
-@media (max-width: 1000px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: repeat(2, 1fr); } .span-3, .span-4 { grid-column: 1 / -1; } .entry-row-hours { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1000px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: repeat(2, 1fr); } .span-3, .span-4 { grid-column: 1 / -1; } .entry-row-work, .entry-row-hours { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 720px) {
   .login-shell { grid-template-columns: 1fr; } .login-brand { display: none; }
   .app-shell { display: block; } .sidebar { position: relative; width: 100%; height: auto; padding: .75rem; }
@@ -189,7 +190,7 @@ tbody tr:hover { background: #f8faf8; }
   .sidebar-user { display: flex; justify-content: space-between; align-items: center; margin-top: .6rem; padding-top: .6rem; }
   .main { padding: 1rem; } .grid-2, .grid-3, .grid-4, .form-grid { grid-template-columns: 1fr; }
   .span-2, .span-3, .span-4 { grid-column: 1; } .form-actions { grid-column: 1; flex-wrap: wrap; } .page-head { align-items: flex-start; }
-  .entry-row-2, .entry-row-hours, .entry-row-history, .entry-row-accounts { grid-template-columns: 1fr; }
+  .entry-row-2, .entry-row-work, .entry-row-hours, .entry-row-history, .entry-row-accounts { grid-template-columns: 1fr; }
   table { min-width: 680px; }
   .account-tree-toolbar { align-items: flex-start; flex-direction: column; }
   .account-tree-head { display: none; }
