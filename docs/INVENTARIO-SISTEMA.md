@@ -348,8 +348,7 @@ O seed cria/atualiza:
 | `20260828011500_add_user_theme` | Adiciona a preferência individual de tema à configuração de cada usuário |
 | `20260828014500_add_help_guides` | Cria os manuais, passos, imagens e a permissão de administração da ajuda |
 
-Produção possui as doze primeiras migrations aplicadas. A décima terceira está
-preparada localmente para os manuais de ajuda e ainda requer backup e implantação.
+Produção possui as treze migrations aplicadas, incluindo os manuais de ajuda.
 Nunca usar `prisma db push` em produção; mudanças de schema devem usar migration
 revisada e backup prévio.
 

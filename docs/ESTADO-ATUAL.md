@@ -7,11 +7,17 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 31 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
-Alteração local pendente de implantação em 28/08/2026: o módulo `/ajuda` permite
-administrar manuais por rota, com passos ordenados, texto e imagens. Páginas com
-manual ativo exibem o botão Ajuda e uma janela com navegação entre passos. A
-migration `20260828014500_add_help_guides` cria os três modelos e a permissão
-`help.manage`; produção permanece com as 12 migrations anteriores.
+Em 28/08/2026, o módulo `/ajuda` passou a administrar manuais por rota, com
+passos ordenados, texto e imagens. Páginas com manual ativo exibem o botão Ajuda
+e uma janela com navegação entre passos. A migration
+`20260828014500_add_help_guides` criou os três modelos e a permissão
+`help.manage`.
+
+Implantação validada em 28/08/2026: backup pré-migration
+`terracusto-20260828-102223.dump` (95.487 bytes), 13 migrations aplicadas sem
+pendências, build remoto aprovado com 24 rotas, serviço ativo desde 10:30 -03 e
+health check com aplicação e banco `ok`. A rota `/ajuda` redirecionou usuários
+sem sessão para `/login` e o timer de backup permaneceu ativo.
 
 Em 28/08/2026, o sistema de temas passou a permitir que cada usuário escolha
 Verde terra, Azul oceano, Areia dourada, Violeta ou Grafite pela barra lateral.
