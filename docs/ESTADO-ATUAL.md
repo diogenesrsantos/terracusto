@@ -7,6 +7,15 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 31 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
+Em 29/08/2026, a imagem institucional passou a aceitar SVG validado além de
+PNG, JPEG e WebP. A logomarca configurada é compartilhada entre relatórios,
+Visão geral e o topo do menu lateral, substituindo a identificação fixa do
+sistema quando estiver disponível.
+
+Implantação validada em 29/08/2026: build remoto aprovado com 24 rotas,
+serviço ativo e health check com aplicação e banco `ok`. Não houve mudança de
+schema nem migration nesta entrega.
+
 Em 29/08/2026, a Visão geral passou a apresentar ao lado do título um cartão
 institucional com a logomarca e os dados configurados da empresa; em telas
 menores, ele é exibido abaixo do cabeçalho.
