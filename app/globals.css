@@ -46,6 +46,12 @@ button { cursor: pointer; }
 .page-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem; }
 .page-head h1 { font-size: clamp(1.65rem, 3vw, 2.2rem); margin: 0; letter-spacing: -.035em; }
 .page-head p { margin: .3rem 0 0; color: var(--muted); }
+.dashboard-company-card { display: grid; grid-template-columns: 76px minmax(220px, 1fr); align-items: center; gap: .75rem; max-width: 480px; padding: .7rem; border: 1px solid var(--line); border-radius: 10px; background: var(--card); box-shadow: var(--shadow); font-size: .78rem; line-height: 1.45; }
+.dashboard-company-card > div:last-child { display: grid; gap: .08rem; min-width: 0; }
+.dashboard-company-card strong { font-size: .95rem; overflow-wrap: anywhere; }
+.dashboard-company-card span { color: var(--muted); overflow-wrap: anywhere; }
+.dashboard-company-logo { display: grid; place-items: center; width: 76px; height: 66px; overflow: hidden; border: 1px dashed var(--line); border-radius: 7px; color: var(--muted); background: #f7f9f7; font-size: .68rem; }
+.dashboard-company-logo img { width: 100%; height: 100%; object-fit: contain; }
 .grid { display: grid; gap: 1rem; }
 .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -195,7 +201,8 @@ tbody tr:hover { background: #f8faf8; }
   .logo { padding-bottom: .5rem; } .nav { grid-template-columns: 1fr; } .nav a, .nav-group-trigger { padding: .6rem .7rem; font-size: .86rem; }
   .sidebar-user { display: flex; justify-content: space-between; align-items: center; margin-top: .6rem; padding-top: .6rem; }
   .main { padding: 1rem; } .grid-2, .grid-3, .grid-4, .form-grid { grid-template-columns: 1fr; }
-  .span-2, .span-3, .span-4 { grid-column: 1; } .form-actions { grid-column: 1; flex-wrap: wrap; } .page-head { align-items: flex-start; }
+  .span-2, .span-3, .span-4 { grid-column: 1; } .form-actions { grid-column: 1; flex-wrap: wrap; } .page-head { align-items: flex-start; flex-direction: column; }
+  .dashboard-company-card { width: 100%; max-width: none; }
   .entry-row-2, .entry-row-work, .entry-row-hours, .entry-row-history, .entry-row-accounts { grid-template-columns: 1fr; }
   .entry-filter-form { grid-template-columns: 1fr; }
   table { min-width: 680px; }

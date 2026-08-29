@@ -37,6 +37,9 @@ O menu lateral possui submenus expansíveis e mostra somente opções autorizada
 As janelas de exibição dos Manuais de ajuda têm altura fixa de 80% da tela. O
 conteúdo de cada passo é rolado dentro da janela, sem redimensionar a ajuda.
 
+Na Visão geral, o cabeçalho apresenta um cartão com a logomarca e os dados da
+empresa cadastrados em Configurações da empresa.
+
 “Visão geral” permanece como acesso direto. Ao entrar em uma página, o grupo
 correspondente abre automaticamente e destaca o subitem atual. Cada grupo pode
 ser expandido ou contraído pelo clique e expõe seu estado para tecnologias
