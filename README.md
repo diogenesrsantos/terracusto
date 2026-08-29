@@ -7,14 +7,17 @@ combustível, almoxarifado e manutenção.
 ## Estado atual
 
 - Produção: <https://terracusto.provizi.net.br>
-- Branch das evoluções implantadas: `feat/evolucoes-operacionais`
+- Branch das evoluções implantadas: `feat/segundo-periodo-jornada`
+- Última versão implantada: `ffb8cc3` (referências de equipamento/operador no
+  tipo de lançamento e build compatível com a memória da VPS)
 - Versão inicial de referência: commit `66a7b02` (`feat: implementa sistema TerraCusto`)
 - Stack: Next.js 16, React 19, TypeScript, Prisma 6 e PostgreSQL
 - Processo: systemd em `terracusto.service`, porta interna `3120`
 - Proxy e TLS: Nginx e Let's Encrypt
 - Backup: diário, com retenção local de 14 dias
 
-O estado de produção acima foi validado em 26/08/2026. Consulte
+O estado de produção acima foi validado em 28/08/2026, com 14 migrations
+aplicadas. Consulte
 [docs/ESTADO-ATUAL.md](docs/ESTADO-ATUAL.md) antes de uma nova alteração.
 
 ## Desenvolvimento local
