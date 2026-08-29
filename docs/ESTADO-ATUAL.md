@@ -7,6 +7,15 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 31 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
+Em 29/08/2026, o Relatório de centro de custo recebeu, sem remover os formatos
+existentes, os modos Contabilizado resumido por conta e Contabilizado detalhado
+por conta. Ambos apresentam débitos, créditos e saldo conforme a natureza da
+conta; o detalhado mantém o saldo acumulado por movimentação.
+
+Implantação validada em 29/08/2026: build remoto aprovado com 24 rotas,
+serviço ativo e health check com aplicação e banco `ok`. Não houve mudança de
+schema nem migration nesta entrega.
+
 Em 28/08/2026, a migration
 `20260828183000_add_entry_type_references` adiciona aos tipos de lançamento os
 indicadores de equipamento e operador/motorista. O Centro de custos passa a
