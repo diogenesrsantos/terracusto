@@ -26,7 +26,7 @@ export default async function SettingsPage() {
         <label className="field span-4">Endereço<textarea name="address" defaultValue={settings?.address || ""} required /></label>
         <label className="field span-2">Responsável<input name="responsibleName" defaultValue={settings?.responsibleName || ""} required /></label>
         <label className="field span-2">Telefone do responsável<input name="responsiblePhone" defaultValue={settings?.responsiblePhone || ""} type="tel" required /></label>
-        <label className="field span-2">Imagem dos relatórios<input name="reportImage" type="file" accept="image/png,image/jpeg,image/webp" /><small className="muted">PNG, JPEG ou WebP, com até 2 MB.</small></label>
+        <label className="field span-2">Logomarca da empresa<input name="reportImage" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,.svg" /><small className="muted">PNG, JPEG, WebP ou SVG, com até 2 MB. A mesma imagem aparece nos relatórios, na Visão geral e no menu.</small></label>
         <div className="field span-2">
           <span>Imagem armazenada</span>
           {settings?.reportImageMimeType ? <><span>{settings.reportImageFileName || "Imagem atual"}</span><label><input className="inline-checkbox" name="removeImage" type="checkbox" value="true" /> Remover imagem atual</label></> : <span className="muted">Nenhuma imagem enviada.</span>}

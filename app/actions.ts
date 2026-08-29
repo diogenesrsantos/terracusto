@@ -17,10 +17,14 @@ const text = (form: FormData, key: string) => String(form.get(key) || "").trim()
 const optional = (form: FormData, key: string) => text(form, key) || null;
 const decimal = (form: FormData, key: string) => new Prisma.Decimal(text(form, key).replace(",", ".") || 0);
 const when = (form: FormData, key: string) => new Date(`${text(form, key)}T12:00:00Z`);
-const REPORT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const REPORT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
 const REPORT_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 const HELP_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
 const HELP_IMAGES_PER_STEP_MAX = 4;
+const isSafeSvg = (content: string) => {
+  const normalized = content.toLowerCase();
+  return normalized.includes("<svg") && !/(<script\b|<foreignobject\b|<iframe\b|<object\b|<embed\b|<link\b|<style\b|<!doctype|<!entity|\bon\w+\s*=|javascript\s*:|data\s*:|\b(?:href|src)\s*=\s*["']\s*(?:https?:|\/\/))/i.test(normalized);
+};
 
 export async function login(form: FormData) {
   const requestHeaders = await headers();
@@ -223,11 +227,14 @@ export async function saveSystemSettings(form: FormData) {
   let imageData: { reportImage: Uint8Array; reportImageMimeType: string; reportImageFileName: string } | null = null;
   if (image instanceof File && image.size > 0) {
     if (removeImage) throw new Error("Escolha entre enviar uma nova imagem ou remover a imagem atual.");
-    if (!REPORT_IMAGE_TYPES.has(image.type)) throw new Error("A imagem deve estar em PNG, JPEG ou WebP.");
+    const imageType = image.type === "image/svg+xml" || image.name.toLowerCase().endsWith(".svg") ? "image/svg+xml" : image.type;
+    if (!REPORT_IMAGE_TYPES.has(imageType)) throw new Error("A imagem deve estar em PNG, JPEG, WebP ou SVG.");
     if (image.size > REPORT_IMAGE_MAX_BYTES) throw new Error("A imagem deve ter no máximo 2 MB.");
+    const reportImage = new Uint8Array(await image.arrayBuffer());
+    if (imageType === "image/svg+xml" && !isSafeSvg(new TextDecoder().decode(reportImage))) throw new Error("O SVG contém conteúdo não permitido. Use apenas formas, textos e imagens sem scripts ou referências externas.");
     imageData = {
-      reportImage: new Uint8Array(await image.arrayBuffer()),
-      reportImageMimeType: image.type,
+      reportImage,
+      reportImageMimeType: imageType,
       reportImageFileName: image.name.slice(0, 255),
     };
   }
@@ -242,6 +249,7 @@ export async function saveSystemSettings(form: FormData) {
   await audit(user.userId, "UPDATE", "SystemSettings", row.id, { imageUpdated: Boolean(imageData), imageRemoved: removeImage });
   revalidatePath("/configuracoes");
   revalidatePath("/api/configuracoes/imagem-relatorio");
+  revalidatePath("/", "layout");
 }
 
 export async function saveUser(form: FormData) {

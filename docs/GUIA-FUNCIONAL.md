@@ -40,6 +40,10 @@ conteúdo de cada passo é rolado dentro da janela, sem redimensionar a ajuda.
 Na Visão geral, o cabeçalho apresenta um cartão com a logomarca e os dados da
 empresa cadastrados em Configurações da empresa.
 
+A logomarca aceita PNG, JPEG, WebP ou SVG de até 2 MB. A mesma imagem é usada
+nos relatórios, na Visão geral e no topo do menu lateral; enquanto nenhuma for
+enviada, o menu mantém a identificação padrão do sistema.
+
 “Visão geral” permanece como acesso direto. Ao entrar em uma página, o grupo
 correspondente abre automaticamente e destaca o subitem atual. Cada grupo pode
 ser expandido ou contraído pelo clique e expõe seu estado para tecnologias

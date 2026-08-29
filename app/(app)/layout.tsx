@@ -29,16 +29,17 @@ const groups = [
 ] as const;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireUser(); const [permissions, preferences, helpGuides] = await Promise.all([
+  const user = await requireUser(); const [permissions, preferences, helpGuides, settings] = await Promise.all([
     getPermissions(user.userId), db.user.findUnique({ where: { id: user.userId }, select: { theme: true } }),
     db.helpGuide.findMany({ where: { active: true }, select: { pageKey: true, title: true, steps: { orderBy: { position: "asc" }, select: { id: true, title: true, content: true, images: { orderBy: { position: "asc" }, select: { id: true } } } } } }),
+    db.systemSettings.findUnique({ where: { id: "default" }, select: { legalName: true, reportImageMimeType: true } }),
   ]);
   const theme = preferences && isThemeName(preferences.theme) ? preferences.theme : "forest";
   const visibleGroups = groups.map((group) => ({ label: group.label, items: group.items
     .filter(([permission]) => permissions.has(permission))
     .map(([, href, label]) => ({ href, label })) })).filter((group) => group.items.length > 0);
   return <div className="app-shell" data-theme={theme}><aside className="sidebar">
-    <Link href="/" className="logo"><span className="logo-mark">T</span><span>TerraCusto</span></Link>
+    <Link href="/" className="logo">{settings?.reportImageMimeType ? <img className="logo-image" src="/api/configuracoes/imagem-relatorio" alt={`Logomarca de ${settings.legalName}`} /> : <><span className="logo-mark">T</span><span>TerraCusto</span></>}</Link>
     <SidebarNav directItems={directItems.filter(([permission]) => permissions.has(permission)).map(([, href, label]) => ({ href, label }))} groups={visibleGroups} />
     <ThemeSelector initialTheme={theme} />
     <div className="sidebar-user"><div><strong>{user.name}</strong>{user.email}<br /><Link href="/perfil" className="link-button">Minha senha</Link></div><form action={logout}><button className="link-button">Sair</button></form></div>

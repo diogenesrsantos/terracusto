@@ -15,6 +15,7 @@ export async function GET() {
       "Cache-Control": "private, no-store",
       "Last-Modified": settings.updatedAt.toUTCString(),
       "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'",
     },
   });
 }
