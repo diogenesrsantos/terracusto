@@ -15,7 +15,7 @@
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Configuração das contas padrão dos tipos |
 | `/lancamentos` | Centro de custos | `accounting.manage` | Partidas balanceadas por obra |
-| `/relatorios/centro-custos` | Relatório de centro de custo | `accounting.manage` | Resumo ou detalhamento por obra e competência, com impressão |
+| `/relatorios/centro-custos` | Relatório de centro de custo | `accounting.manage` | Resumo, detalhamento e opções contabilizadas por obra e competência, com impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento e balancete mensal |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura com senha e justificativa |
 | `/combustivel` | Combustível | `fuel.manage` | Fornecedores, compras, tanque e abastecimentos |
@@ -158,6 +158,11 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   selecionada, em páginas de até 20 registros. Ao clicar ou usar Enter/Espaço
   em uma linha, o lançamento é carregado para edição. Os controles Anterior e
   Próxima permanecem visíveis e ficam desabilitados quando não há outra página.
+- O Relatório de centro de custo mantém as opções Resumo por competência e
+  Detalhado. Também oferece Contabilizado resumido por conta e Contabilizado
+  detalhado por conta. Nesses formatos, o saldo de cada conta respeita sua
+  natureza: devedora calcula débitos menos créditos; credora calcula créditos
+  menos débitos.
 - A edição recria as duas linhas contábeis balanceadas e respeita as mesmas
   regras de competência, data, tipo e contas de um lançamento novo. Compras de
   combustível não podem ser editadas pelo Centro de custos.

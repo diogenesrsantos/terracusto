@@ -134,6 +134,10 @@ tbody tr:hover { background: #f8faf8; }
 .report-actions { display: flex; justify-content: flex-end; margin-bottom: 1rem; }
 .report-meta { margin: 1rem 0 1.5rem; padding: .75rem; background: #f7f9f7; border-left: 3px solid var(--brand); line-height: 1.65; }
 .report-sheet h2 { margin: 1.5rem 0 .7rem; font-size: 1.05rem; }
+.account-report-group { margin-top: 1.5rem; break-inside: avoid; }
+.account-report-group h3 { margin: 0 0 .55rem; font-size: .98rem; }
+.account-report-group h3 small { color: var(--muted); font-weight: 500; }
+.report-note { margin: 1rem 0 0; color: var(--muted); font-size: .82rem; }
 .report-sheet tfoot { border-top: 2px solid var(--ink); }
 .report-sheet tfoot th { color: var(--ink); }
 .report-footer { margin: 1.5rem 0 0; color: var(--muted); font-size: .78rem; text-align: right; }

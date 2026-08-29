@@ -121,9 +121,11 @@ binárias. O layout consulta somente manuais ativos, exibe Ajuda quando houver
 passos e entrega as imagens por rota autenticada. A edição exige `help.manage`.
 
 `/relatorios/centro-custos` é uma página autenticada por `accounting.manage` e
-consulta lançamentos por obra ativa e competência. O modo resumido agrega
-quantidade, horas e valor no servidor; o modo detalhado exibe lançamentos,
-contas, horários e totais. A impressão usa CSS específico para remover filtros,
+consulta lançamentos por obra ativa e competência. Os modos originais resumido
+e detalhado permanecem disponíveis. Os modos contabilizados agrupam as linhas
+por conta e calculam o saldo segundo sua natureza: devedora por débitos menos
+créditos e credora por créditos menos débitos; o detalhado mantém o saldo
+acumulado por movimentação. A impressão usa CSS específico para remover filtros,
 menu e ações, preservando o cabeçalho institucional.
 
 ## Autenticação e autorização
