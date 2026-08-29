@@ -7,6 +7,13 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 31 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
+Em 29/08/2026, a janela de exibição dos Manuais de ajuda passou a manter altura
+fixa de 80% da tela, com rolagem interna para o conteúdo dos passos.
+
+Implantação validada em 29/08/2026: build remoto aprovado com 24 rotas,
+serviço ativo e health check com aplicação e banco `ok`. Não houve mudança de
+schema nem migration nesta entrega.
+
 Em 29/08/2026, a listagem do Centro de custos passou a oferecer filtros por
 data específica, período e conta. A conta é encontrada tanto em partidas
 devedoras quanto credoras, e a paginação preserva os filtros aplicados.
