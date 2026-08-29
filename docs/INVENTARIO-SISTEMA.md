@@ -39,7 +39,7 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/ajuda` | Manuais de ajuda | `help.manage` | Cadastro de guias, passos ordenados, textos e imagens |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
 | `/tipos-lancamento` | Tipos de lançamento | `accounting.manage` | Cadastro, edição, situação, exclusão e contas padrão dos tipos |
-| `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtro por obra e edição |
+| `/lancamentos` | Centro de custos | `accounting.manage` | Lançamentos balanceados, paginação, filtros por obra/data/período/conta e edição |
 | `/relatorios/centro-custos` | Relatório de centro de custo | `accounting.manage` | Seleção de obra/competências, resumo, detalhamento e opções contabilizadas por conta, com impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento de competências vencidas e balancete |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura mediante senha e justificativa |

@@ -5,8 +5,12 @@ import { businessToday, dateInput, monthStart, number, timeInput } from "@/lib/f
 import { requirePermission } from "@/lib/auth";
 
 const PAGE_SIZE = 20;
+type EntrySearchParams = { workId?: string; page?: string; date?: string; dateFrom?: string; dateTo?: string; accountId?: string };
+const validDateInput = (value: string | undefined) => Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(new Date(`${value}T12:00:00.000Z`).getTime()));
+const startOfDay = (value: string) => new Date(`${value}T00:00:00.000Z`);
+const endOfDay = (value: string) => new Date(`${value}T23:59:59.999Z`);
 
-export default async function EntriesPage({ searchParams }: { searchParams: Promise<{ workId?: string; page?: string }> }) {
+export default async function EntriesPage({ searchParams }: { searchParams: Promise<EntrySearchParams> }) {
   await requirePermission("accounting.manage");
   const params = await searchParams;
   const today = businessToday();
@@ -21,8 +25,21 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
   ]);
 
   const selectedWorkId = works.some((work) => work.id === params.workId) ? params.workId! : "";
+  const selectedAccountId = accounts.some((account) => account.id === params.accountId) ? params.accountId! : "";
+  const selectedDate = validDateInput(params.date) ? params.date! : "";
+  const selectedDateFrom = validDateInput(params.dateFrom) ? params.dateFrom! : "";
+  const selectedDateTo = validDateInput(params.dateTo) ? params.dateTo! : "";
+  const dateFilter = selectedDate
+    ? { gte: startOfDay(selectedDate), lte: endOfDay(selectedDate) }
+    : selectedDateFrom || selectedDateTo
+      ? { ...(selectedDateFrom ? { gte: startOfDay(selectedDateFrom) } : {}), ...(selectedDateTo ? { lte: endOfDay(selectedDateTo) } : {}) }
+      : undefined;
   const requestedPage = Math.max(1, Number.parseInt(params.page || "1", 10) || 1);
-  const entryWhere = { workId: selectedWorkId, entryTypeId: { not: null } };
+  const entryWhere = {
+    workId: selectedWorkId, entryTypeId: { not: null },
+    ...(dateFilter ? { date: dateFilter } : {}),
+    ...(selectedAccountId ? { lines: { some: { accountId: selectedAccountId } } } : {}),
+  };
   const totalEntries = selectedWorkId ? await db.accountingEntry.count({ where: entryWhere }) : 0;
   const totalPages = Math.max(1, Math.ceil(totalEntries / PAGE_SIZE));
   const page = Math.min(requestedPage, totalPages);
@@ -67,6 +84,7 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
       key={`${selectedWorkId}:${page}`}
       today={dateInput(today)} initialWorkId={selectedWorkId} page={page} totalPages={totalPages}
       totalEntries={totalEntries} entries={serializedEntries}
+      listingFilters={{ date: selectedDate, dateFrom: selectedDateFrom, dateTo: selectedDateTo, accountId: selectedAccountId }}
       works={works.map((work) => {
         const open = openPeriods.find((period) => period.workId === work.id);
         const competence = open?.competence || currentCompetence;

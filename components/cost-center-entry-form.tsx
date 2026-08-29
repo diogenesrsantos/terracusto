@@ -19,6 +19,7 @@ type EntryDraft = {
   assetId: string;
   personId: string;
 };
+type ListingFilters = { date: string; dateFrom: string; dateTo: string; accountId: string };
 
 const draftKey = (workId: string) => `terracusto.entryDraft.${workId}`;
 export type CostCenterEntryItem = {
@@ -55,6 +56,7 @@ export function CostCenterEntryForm({
   totalPages,
   totalEntries,
   today,
+  listingFilters,
 }: {
   works: WorkOption[];
   accounts: Option[];
@@ -67,6 +69,7 @@ export function CostCenterEntryForm({
   totalPages: number;
   totalEntries: number;
   today: string;
+  listingFilters: ListingFilters;
 }) {
   const router = useRouter();
   const [workId, setWorkId] = useState(initialWorkId);
@@ -220,6 +223,15 @@ export function CostCenterEntryForm({
     setSecondEndTime("");
   }
 
+  function listingHref(targetPage: number) {
+    const query = new URLSearchParams({ workId, page: String(targetPage) });
+    if (listingFilters.date) query.set("date", listingFilters.date);
+    if (listingFilters.dateFrom) query.set("dateFrom", listingFilters.dateFrom);
+    if (listingFilters.dateTo) query.set("dateTo", listingFilters.dateTo);
+    if (listingFilters.accountId) query.set("accountId", listingFilters.accountId);
+    return `/lancamentos?${query.toString()}`;
+  }
+
   return <><section className="card"><h2>{editing ? "Alteração de lançamento" : "Novo lançamento"}</h2><form key={formVersion} action={submitEntry} className="form-grid">
     <input type="hidden" name="id" value={editing?.id || ""} />
     <fieldset className="entry-group span-4"><legend>Obra e lançamento</legend>
@@ -258,9 +270,10 @@ export function CostCenterEntryForm({
     <div className="form-actions">{editing && <button className="btn secondary" type="button" onClick={cancelEditing}>Cancelar alteração</button>}<button className="btn" disabled={!selectedWork || selectedWork.blocked}>{editing ? "Salvar alteração" : "Contabilizar lançamento"}</button></div>
   </form></section>
   <section className="card mt"><div className="list-head"><h2>Lançamentos da obra</h2><span className="muted">{totalEntries} {totalEntries === 1 ? "lançamento" : "lançamentos"}</span></div>
-    {!workId ? <Empty>Selecione uma obra para visualizar seus lançamentos.</Empty> : entries.length === 0 ? <Empty>Nenhum lançamento nesta obra.</Empty> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Tipo/histórico</th><th>Contas</th><th>Equipamento/pessoa</th><th>Hora de início</th><th>Hora final</th><th>Duração</th><th className="text-right">Valor</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.id} className={`selectable-row${editing?.id === entry.id ? " selected" : ""}`} onClick={() => editEntry(entry)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); editEntry(entry); } }} role="button" tabIndex={0} aria-selected={editing?.id === entry.id}>
+    {workId && <form method="get" className="entry-filter-form"><input type="hidden" name="workId" value={workId} /><label className="field">Data<input name="date" type="date" defaultValue={listingFilters.date} /></label><label className="field">Período — de<input name="dateFrom" type="date" defaultValue={listingFilters.dateFrom} /></label><label className="field">Período — até<input name="dateTo" type="date" defaultValue={listingFilters.dateTo} /></label><label className="field">Conta<select name="accountId" defaultValue={listingFilters.accountId}><option value="">Todas as contas</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.label}</option>)}</select></label><div className="form-actions"><Link className="btn secondary" href={`/lancamentos?workId=${encodeURIComponent(workId)}`}>Limpar filtros</Link><button className="btn" type="submit">Filtrar</button></div></form>}
+    {!workId ? <Empty>Selecione uma obra para visualizar seus lançamentos.</Empty> : entries.length === 0 ? <Empty>Nenhum lançamento encontrado com os filtros selecionados.</Empty> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Tipo/histórico</th><th>Contas</th><th>Equipamento/pessoa</th><th>Hora de início</th><th>Hora final</th><th>Duração</th><th className="text-right">Valor</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.id} className={`selectable-row${editing?.id === entry.id ? " selected" : ""}`} onClick={() => editEntry(entry)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); editEntry(entry); } }} role="button" tabIndex={0} aria-selected={editing?.id === entry.id}>
       <td>{new Date(`${entry.date}T12:00:00Z`).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td><span className="badge">{entry.entryTypeName}</span><br />{entry.history}<br /><small className="muted">{entry.document || "Sem documento"}</small></td><td>{entry.accountSummary.map((line) => <small key={line} style={{ display: "block" }}>{line}</small>)}</td><td>{entry.assetLabel || "—"}<br /><small>{entry.personName}</small></td><td>{entry.startTime ? <>1º: {entry.startTime}{entry.secondStartTime && <><br />2º: {entry.secondStartTime}</>}</> : "—"}</td><td>{entry.endTime ? <>1º: {entry.endTime}{entry.secondEndTime && <><br />2º: {entry.secondEndTime}</>}</> : "—"}</td><td>{entry.hours || "—"}</td><td className="text-right">{Number(entry.amount).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</td>
     </tr>)}</tbody></table></div>}
-    {workId && <nav className="pagination" aria-label="Paginação de lançamentos">{page > 1 ? <Link className="btn secondary" href={`/lancamentos?workId=${encodeURIComponent(workId)}&page=${page - 1}`}>Anterior</Link> : <button className="btn secondary" type="button" disabled>Anterior</button>}<span>Página {page} de {totalPages}</span>{page < totalPages ? <Link className="btn secondary" href={`/lancamentos?workId=${encodeURIComponent(workId)}&page=${page + 1}`}>Próxima</Link> : <button className="btn secondary" type="button" disabled>Próxima</button>}</nav>}
+    {workId && <nav className="pagination" aria-label="Paginação de lançamentos">{page > 1 ? <Link className="btn secondary" href={listingHref(page - 1)}>Anterior</Link> : <button className="btn secondary" type="button" disabled>Anterior</button>}<span>Página {page} de {totalPages}</span>{page < totalPages ? <Link className="btn secondary" href={listingHref(page + 1)}>Próxima</Link> : <button className="btn secondary" type="button" disabled>Próxima</button>}</nav>}
   </section></>;
 }

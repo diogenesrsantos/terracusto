@@ -100,6 +100,8 @@ tbody tr:hover { background: #f8faf8; }
 .error { color: var(--danger); background: #fbe9e8; border-radius: 8px; padding: .75rem; }
 .muted { color: var(--muted); } .text-right { text-align: right; } .mt { margin-top: 1rem; }
 .list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.entry-filter-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin: 1rem 0; padding: .85rem; border: 1px solid var(--line); border-radius: 8px; background: #f7f9f7; }
+.entry-filter-form .form-actions { grid-column: 1 / -1; margin: 0; }
 .pagination { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; margin-top: 1rem; }
 .pagination > :last-child { justify-self: end; }
 .account-tree-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .7rem; }
@@ -195,6 +197,7 @@ tbody tr:hover { background: #f8faf8; }
   .main { padding: 1rem; } .grid-2, .grid-3, .grid-4, .form-grid { grid-template-columns: 1fr; }
   .span-2, .span-3, .span-4 { grid-column: 1; } .form-actions { grid-column: 1; flex-wrap: wrap; } .page-head { align-items: flex-start; }
   .entry-row-2, .entry-row-work, .entry-row-hours, .entry-row-history, .entry-row-accounts { grid-template-columns: 1fr; }
+  .entry-filter-form { grid-template-columns: 1fr; }
   table { min-width: 680px; }
   .account-tree-toolbar { align-items: flex-start; flex-direction: column; }
   .account-tree-head { display: none; }

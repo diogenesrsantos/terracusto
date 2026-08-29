@@ -158,6 +158,10 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   selecionada, em páginas de até 20 registros. Ao clicar ou usar Enter/Espaço
   em uma linha, o lançamento é carregado para edição. Os controles Anterior e
   Próxima permanecem visíveis e ficam desabilitados quando não há outra página.
+- A listagem pode ser filtrada por uma data específica ou por período (data
+  inicial e final) e por conta. O filtro de conta localiza a conta tanto quando
+  ela é devedora quanto quando é credora; os filtros permanecem ao trocar de
+  página.
 - O Relatório de centro de custo mantém as opções Resumo por competência e
   Detalhado. Também oferece Contabilizado resumido por conta e Contabilizado
   detalhado por conta. Nesses formatos, o saldo de cada conta respeita sua
