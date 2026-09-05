@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { login } from "@/app/actions";
+import { LoginPasswordField } from "@/components/login-password-field";
 
 export const metadata: Metadata = { title: "Entrar" };
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
@@ -14,7 +15,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       {erro && <p className="error">{erro === "limite" ? "Muitas tentativas. Aguarde 15 minutos." : "E-mail ou senha inválidos."}</p>}
       <form action={login} className="grid">
         <label className="field">E-mail<input name="email" type="email" autoComplete="username" required autoFocus /></label>
-        <label className="field">Senha<input name="password" type="password" autoComplete="current-password" required /></label>
+        <LoginPasswordField />
         <button className="btn" type="submit">Entrar</button>
       </form>
     </div></section>

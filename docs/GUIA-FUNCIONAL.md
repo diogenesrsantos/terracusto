@@ -64,7 +64,7 @@ O seed mantém dois perfis:
 
 - `ADMIN` (Administrador): recebe todas as permissões.
 - `CLERK` (Escriturário): recebe todas, exceto `users.manage`,
-  `closing.reopen` e `settings.manage`.
+  `closing.reopen`, `settings.manage` e `help.manage`.
 
 Novos perfis podem ser criados na tela de usuários escolhendo qualquer
 combinação das 14 permissões. Usuários existentes podem ter nome, e-mail,
@@ -249,7 +249,7 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 
 O seed é idempotente e cria/atualiza:
 
-- as 12 permissões e os perfis `ADMIN` e `CLERK`;
+- as 14 permissões e os perfis `ADMIN` e `CLERK`;
 - as funções Administrativo, Auxiliar, Mecânico, Motorista e Operador de
   máquinas;
 - os tipos de equipamento Máquina, Veículo, Ferramenta e Outro;

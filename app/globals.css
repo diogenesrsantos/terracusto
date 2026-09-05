@@ -22,6 +22,11 @@ button { cursor: pointer; }
 .login-panel { display: grid; place-items: center; padding: 2rem; }
 .login-card { width: min(100%, 420px); background: white; padding: 2rem; border-radius: 20px; box-shadow: var(--shadow); }
 .login-card h2 { margin-top: 0; }
+.password-input-wrap { position: relative; display: block; }
+.password-input-wrap input { padding-right: 5.5rem; }
+.password-visibility { position: absolute; top: 50%; right: .4rem; transform: translateY(-50%); border: 0; padding: .35rem .45rem; color: var(--brand); background: transparent; font-size: .78rem; font-weight: 750; }
+.password-visibility:hover { color: var(--brand-dark); }
+.password-visibility:focus-visible { border-radius: 5px; outline: 2px solid var(--brand); outline-offset: 1px; }
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 260px 1fr; }
 .sidebar { position: sticky; top: 0; height: 100vh; padding: 1.4rem 1rem; background: var(--sidebar); color: white; overflow-y: auto; }
 .logo { display: flex; align-items: center; gap: .75rem; padding: .35rem .65rem 1.4rem; font-size: 1.25rem; font-weight: 800; }

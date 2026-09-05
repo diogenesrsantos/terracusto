@@ -7,6 +7,15 @@ O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registr
 os módulos, fluxos, 31 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
+Em 02/09/2026, a tela de login recebeu o controle “Mostrar/Ocultar”, permitindo
+ao usuário conferir a senha digitada antes de entrar sem alterar seu valor.
+
+Implantação validada em 02/09/2026: typecheck e builds local/remoto aprovados
+com 24 rotas, 14 migrations sem pendências, serviço ativo e health check com
+aplicação e banco `ok`. O domínio público respondeu HTTP 307 para `/login`, a
+página publicada contém o controle “Mostrar”, o Nginx permaneceu válido e o
+timer de backup ativo. Não houve alteração de schema nem de dados.
+
 Em 29/08/2026, a imagem institucional passou a aceitar SVG validado além de
 PNG, JPEG e WebP. A logomarca configurada é compartilhada entre relatórios,
 Visão geral e o topo do menu lateral, substituindo a identificação fixa do
