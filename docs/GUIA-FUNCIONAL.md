@@ -9,7 +9,9 @@
 | `/usuarios` | Usuários e acessos | `users.manage` | Cadastro, edição e paginação de usuários; perfis personalizados |
 | `/empresas` | Empresas | `companies.manage` | Cadastro único de clientes e fornecedores de combustível |
 | `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de centros de custo/obras |
-| `/equipamentos` | Equipamentos | `assets.manage` | Tipos, cadastro, edição e paginação de ativos |
+| `/equipamentos` | Equipamentos | `assets.manage` | Tipos, ativos, capacidade do tanque e método de consumo |
+| `/tipos-combustiveis` | Tipos de combustíveis | `fuel.manage` | Cadastro, edição, situação e preço de referência |
+| `/tanques-combustivel` | Tanques de combustível | `fuel.manage` | Reservatórios fixos/móveis, capacidade, saldo e histórico |
 | `/configuracoes` | Configurações da empresa | `settings.manage` | Dados da empresa usuária e imagem dos relatórios |
 | `/ajuda` | Manuais de ajuda | `help.manage` | Criação, edição, imagens e ordenação de guias por módulo |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Contas sintéticas e analíticas |
@@ -18,7 +20,8 @@
 | `/relatorios/centro-custos` | Relatório de centro de custo | `accounting.manage` | Resumo, detalhamento e opções contabilizadas por obra e competência, com impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento e balancete mensal |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura com senha e justificativa |
-| `/combustivel` | Combustível | `fuel.manage` | Fornecedores, compras, tanque e abastecimentos |
+| `/combustivel/compras` | Compras de combustível | `fuel.manage` | Entradas por tanque, pagamento, contabilização e fornecedores |
+| `/combustivel/abastecimentos` | Abastecimentos | `fuel.manage` | Saída, contabilização e média de consumo por equipamento |
 | `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas e ajustes positivos |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens de serviço |
 | `/perfil` | Minha conta | Usuário autenticado | Troca de senha |
@@ -28,11 +31,11 @@ a permissão exigida são redirecionados para `/sem-permissao`.
 
 O menu lateral possui submenus expansíveis e mostra somente opções autorizadas:
 
-- **Cadastros:** Pessoas, Usuários e acessos, Empresas, Obras, Equipamentos e
-  Configurações da empresa;
+- **Cadastros:** Pessoas, Usuários e acessos, Empresas, Obras, Equipamentos,
+  Tipos de combustíveis, Tanques de combustível e Configurações da empresa;
 - **Contabilidade:** Plano de contas, Tipos de lançamento, Centro de custos e
   Fechamentos;
-- **Operacional:** Combustível, Almoxarifado e Manutenção.
+- **Operacional:** Compras, Abastecimentos, Almoxarifado e Manutenção.
 
 As janelas de exibição dos Manuais de ajuda têm altura fixa de 80% da tela. O
 conteúdo de cada passo é rolado dentro da janela, sem redimensionar a ajuda.
@@ -103,7 +106,7 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   cada lançamento, horários, contas e valor. O botão de impressão oculta os
   filtros e a navegação.
 - A edição de equipamento permite alterar tipo, identificador, descrição,
-  marca, modelo, combustível e consumo esperado.
+  marca, modelo, combustível, capacidade do tanque, método e consumo esperado.
 
 ## Regras principais
 
@@ -179,7 +182,8 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   menos débitos.
 - A edição recria as duas linhas contábeis balanceadas e respeita as mesmas
   regras de competência, data, tipo e contas de um lançamento novo. Compras de
-  combustível não podem ser editadas pelo Centro de custos.
+  combustível, abastecimentos e pagamentos de fornecedores não podem ser
+  editados pelo Centro de custos, pois são gerados por seus módulos de origem.
 - Uma competência fechada não aceita novos lançamentos nem compras de
   combustível vinculadas àquela obra. As mesmas regras de competência e data
   futura são verificadas no servidor para compras que geram lançamento.
@@ -200,13 +204,28 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
   situação. Registros sem uso são removidos; registros já vinculados a
   equipamentos, compras ou abastecimentos são desativados para preservar o
   histórico e podem ser reativados pela edição.
-- A compra calcula `litros × preço unitário`, arredonda para duas casas e cria,
-  na mesma transação, o lançamento contábil correspondente.
-- O saldo do tanque é global por tipo de combustível: total comprado menos
-  total abastecido. No modelo atual ele não é separado por obra ou tanque.
-- Um abastecimento exige combustível, equipamento e obra, e pode registrar
-  operador, horímetro/odômetro e observação.
-- Não é permitida saída maior que o saldo calculado.
+- Tanques possuem identificação única, tipo fixo ou móvel, capacidade em litros,
+  combustível, observações e situação. O combustível não pode ser trocado após
+  a primeira movimentação e a capacidade não pode ficar abaixo do saldo.
+- Cada tanque tem saldo próprio: compras menos abastecimentos. Uma compra que
+  ultrapasse a capacidade disponível é rejeitada.
+- A compra registra tanque, fornecedor, nota, litros, preço, centro de custos e
+  pagamento à vista ou a prazo. O total e o lançamento contábil são criados na
+  mesma transação.
+- Compra a prazo gera crédito na conta corrente do fornecedor. O pagamento
+  posterior gera débito nesse extrato e novo lançamento contábil; não é aceito
+  pagamento superior ao saldo devido.
+- Equipamentos abastecíveis exigem capacidade e método de consumo. Veículos
+  usam `km/L`; máquinas usam `L/h`.
+- Cada abastecimento representa tanque cheio. A quantidade não pode superar a
+  capacidade do equipamento, o combustível deve ser compatível e o medidor deve
+  avançar em relação à última referência completa.
+- O primeiro abastecimento completo estabelece a referência. Nos seguintes,
+  veículos calculam `quilômetros percorridos ÷ litros` e máquinas calculam
+  `litros ÷ horas trabalhadas`.
+- A saída usa o custo médio do estoque do tanque e cria, na mesma transação, um
+  lançamento balanceado no centro de custos. As contas vêm de um tipo de
+  lançamento marcado como disponível para abastecimentos.
 
 ### Almoxarifado
 
@@ -223,8 +242,8 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 - A interface atual leva a ordem diretamente de aberta para concluída; os
   estados intermediários existem no banco, mas ainda não têm ação própria.
 - A conclusão registra diagnóstico, serviço, custo externo e data final.
-- A estrutura de banco prevê peças por ordem, mas a interface atual ainda não
-  cadastra `MaintenancePart` nem baixa essas peças do estoque.
+- A conclusão aceita até cinco peças e baixa o estoque na mesma transação,
+  impedindo quantidade superior ao saldo disponível.
 
 ### Pessoas, obras e equipamentos
 
@@ -240,8 +259,8 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 - Cada obra funciona como centro de custo dos lançamentos operacionais.
 - O código da obra é numérico, único e gerado automaticamente pelo banco em
   ordem crescente; ele não é informado pelo usuário.
-- Equipamentos podem ter tipo de combustível e consumo esperado. O consumo
-  esperado é armazenado, mas ainda não gera alertas ou relatórios.
+- Equipamentos podem ter combustível, capacidade do tanque, método de consumo e
+  consumo esperado. O histórico de abastecimentos mostra a média calculada.
 - Tipos de equipamento são mantidos em um catálogo próprio. Cada equipamento
   exige um tipo ativo, evitando variações de texto no cadastro.
 

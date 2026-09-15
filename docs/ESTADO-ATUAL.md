@@ -11,6 +11,12 @@ um tipo de lançamento marcado para abastecimentos. A migration
 como referências não completas e cria o tipo inicial “Consumo de combustível
 da frota”.
 
+Implantação validada em 15/09/2026: backup pré-migration
+`terracusto-20260915-122537.dump` (718.989 bytes), 16 migrations aplicadas,
+build local aprovado com 28 rotas, serviço ativo, health check com aplicação e
+banco `ok`, HTTPS público redirecionando para `/login` e timer de backup ativo.
+O commit publicado é `8157616`.
+
 Em 15/09/2026, a primeira etapa da evolução de combustível passou a controlar
 reservatórios fixos e móveis, capacidade, combustível e saldo individual. As
 compras são vinculadas ao tanque e identificam pagamento à vista ou a prazo;
@@ -20,11 +26,15 @@ o histórico recente de entradas e saídas. A migration
 `20260915150000_add_fuel_tanks_and_supplier_ledger` preserva o histórico
 anterior criando tanques de legado por tipo de combustível.
 
+Implantação validada em 15/09/2026: backup pré-migration
+`terracusto-20260915-114509.dump` (710.202 bytes), quatro tanques de legado
+criados, 15 migrations aplicadas e commit `01c9a91` publicado.
+
 Registro da implantação inicial, validado em **26/08/2026**, no fuso
 `America/Bahia`.
 
 O mapa consolidado do produto está em `docs/INVENTARIO-SISTEMA.md`. Ele registra
-os módulos, fluxos, 31 modelos, ações, migrations, segurança, operação e limites
+os módulos, fluxos, 33 modelos, ações, migrations, segurança, operação e limites
 conhecidos sem incluir segredos ou dados pessoais.
 
 Em 02/09/2026, a tela de login recebeu o controle “Mostrar/Ocultar”, permitindo
@@ -243,9 +253,9 @@ público respondeu HTTP 307 para `/login` e o timer de backup permaneceu ativo.
 ## Código
 
 - Repositório local: `/home/diogenes/Desenvolvimento/Reflex/terracusto`
-- Branch consolidada: `feat/evolucoes-operacionais`
+- Branch consolidada: `chore/documentacao-sistema-20260829`
 - Commit inicial de referência: `66a7b027cc46bf8a1d9b0b9949e6177b37582f58`
-- Remoto esperado: `origin/feat/evolucoes-operacionais`; confirme o hash atual
+- Remoto esperado: `origin/chore/documentacao-sistema-20260829`; confirme o hash atual
   com `git rev-parse HEAD` antes da próxima implantação
 - Árvore de trabalho esperada após a consolidação: limpa
 - Migration inicial: `prisma/migrations/20260826173814_init/migration.sql`

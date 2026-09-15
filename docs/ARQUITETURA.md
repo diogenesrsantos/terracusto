@@ -73,7 +73,7 @@ de `Work.client` e substitui o texto pela chave estrangeira.
 
 ## Domínios de dados
 
-O schema possui 31 modelos, agrupados assim:
+O schema possui 33 modelos, agrupados assim:
 
 - Identidade: `Person`, `JobFunction`, `Activity`, `PersonActivity`, `User`, `Role`,
   `Permission`, `UserRole`, `RolePermission` e `AuditLog`.
@@ -82,15 +82,8 @@ O schema possui 31 modelos, agrupados assim:
   `Asset`.
 - Contabilidade: `Account`, `AccountingEntry`, `AccountingLine`,
   `AccountingPeriod`, `MonthlyClosing` e `EntryType`.
-- Combustível: `FuelType`, `FuelPurchase` e `FuelDispense`.
-- Reservatórios e fornecedores: `FuelTank` individualiza capacidade e saldo;
-  `SupplierLedgerEntry` mantém débitos e créditos da conta corrente de postos.
-
-Cada `Asset` abastecível informa `fuelTankCapacity` e `consumptionMetric`. Um
-novo `FuelDispense` representa o tanque do equipamento completado, guarda a
-diferença do horímetro/odômetro, a média calculada, custo médio unitário e custo
-total. A baixa física e o `AccountingEntry` balanceado são criados na mesma
-transação serializável.
+- Combustível: `FuelType`, `FuelTank`, `FuelPurchase`, `FuelDispense` e
+  `SupplierLedgerEntry`.
 - Estoque: `Product` e `StockMovement`.
 - Manutenção: `MaintenanceOrder` e `MaintenancePart`.
 
@@ -98,6 +91,12 @@ Valores monetários e quantidades usam `Decimal` no PostgreSQL/Prisma. Datas de
 lançamento inseridas pela interface são normalizadas para meio-dia UTC, evitando
 mudança do dia ao exibir no fuso brasileiro. Competências usam o primeiro dia do
 mês em UTC.
+
+`FuelTank` individualiza capacidade e saldo por reservatório.
+`SupplierLedgerEntry` mantém débitos e créditos da conta corrente dos postos.
+Cada `Asset` abastecível informa capacidade e método de consumo. Um
+`FuelDispense` representa tanque cheio, armazena diferença do medidor, média,
+custo unitário e total; a baixa física e o lançamento balanceado são atômicos.
 
 `AccountingEntry` armazena o primeiro período em `startAt`/`endAt` e, quando
 necessário, um segundo período anulável em `secondStartAt`/`secondEndAt`. A ação
@@ -211,8 +210,7 @@ invalidar caches antigos.
   sessões já emitidas.
 - O JWT guarda nome e e-mail até expirar; mudanças nesses campos não atualizam
   uma sessão já aberta.
-- O saldo de combustível não distingue tanque/local/obra.
-- Peças de manutenção existem no schema, mas não estão integradas ao estoque na
-  interface.
+- Não há transferência direta de combustível entre tanques.
+- O consumo esperado ainda não dispara alertas automáticos de desvio.
 - O backup é local à mesma VPS; para recuperação de desastre, deve existir uma
   cópia externa testada.

@@ -20,7 +20,7 @@ clientes nem conteúdo das variáveis de ambiente.
   `America/Bahia`.
 - Produção: `https://terracusto.provizi.net.br`.
 - Stack: Next.js 16.3.3, React 19, TypeScript 5, Prisma 6.12 e PostgreSQL.
-- Repositório/branch consolidada: `feat/evolucoes-operacionais`; confirme o
+- Repositório/branch consolidada: `chore/documentacao-sistema-20260829`; confirme o
   commit vigente com `git rev-parse HEAD`.
 - Evoluções locais posteriores ao commit consolidado são registradas em
   `docs/ESTADO-ATUAL.md` antes da implantação.
@@ -35,6 +35,8 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/empresas` | Empresas | `companies.manage` | Cadastro, edição e paginação do catálogo compartilhado por obras e combustível |
 | `/obras` | Obras | `works.manage` | Cadastro, edição e paginação de obras/centros de custo |
 | `/equipamentos` | Equipamentos | `assets.manage` | Cadastro de tipos e cadastro, edição e paginação de equipamentos/ativos |
+| `/tipos-combustiveis` | Tipos de combustíveis | `fuel.manage` | Cadastro, edição, ativação e preço de referência |
+| `/tanques-combustivel` | Tanques de combustível | `fuel.manage` | Reservatórios fixos/móveis, capacidade, saldo e histórico |
 | `/configuracoes` | Configurações da empresa | `settings.manage` | Dados institucionais, upload da imagem e prévia do cabeçalho dos relatórios |
 | `/ajuda` | Manuais de ajuda | `help.manage` | Cadastro de guias, passos ordenados, textos e imagens |
 | `/plano-contas` | Plano de contas | `accounting.manage` | Cadastro e listagem hierárquica de contas |
@@ -43,7 +45,8 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/relatorios/centro-custos` | Relatório de centro de custo | `accounting.manage` | Seleção de obra/competências, resumo, detalhamento e opções contabilizadas por conta, com impressão |
 | `/fechamentos` | Fechamentos | `closing.close` | Fechamento de competências vencidas e balancete |
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura mediante senha e justificativa |
-| `/combustivel` | Combustível | `fuel.manage` | Tipos, fornecedores, compras, saldo do tanque e abastecimentos |
+| `/combustivel/compras` | Compras de combustível | `fuel.manage` | Entradas por tanque, compras à vista/a prazo, conta corrente e pagamentos |
+| `/combustivel/abastecimentos` | Abastecimentos | `fuel.manage` | Tanque cheio, saída contabilizada e média `km/L` ou `L/h` |
 | `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas, ajustes positivos, saldos e alerta de reposição |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens preventivas/corretivas |
 | `/perfil` | Minha senha | usuário autenticado | Alteração da própria senha |
@@ -54,9 +57,10 @@ O menu lateral só mostra módulos permitidos ao usuário. A autorização é
 repetida no servidor em todas as páginas protegidas e ações de escrita.
 
 A navegação é agrupada em submenus expansíveis: Cadastros reúne Pessoas,
-Usuários e acessos, Empresas, Obras, Equipamentos e Configurações da empresa; Contabilidade reúne Plano de contas,
+Usuários e acessos, Empresas, Obras, Equipamentos, Tipos de combustíveis,
+Tanques de combustível e Configurações da empresa; Contabilidade reúne Plano de contas,
 Tipos de lançamento, Centro de custos e Fechamentos; Operacional reúne
-Combustível, Almoxarifado e Manutenção. Visão geral é um item direto. O grupo da rota atual abre
+Compras, Abastecimentos, Almoxarifado e Manutenção. Visão geral é um item direto. O grupo da rota atual abre
 automaticamente, o subitem recebe destaque e os gatilhos são acessíveis por
 teclado e tecnologias assistivas. Grupos sem nenhum item permitido são
 omitidos.
@@ -92,7 +96,7 @@ autenticados. A permissão `help.manage` controla a rota administrativa `/ajuda`
   selecionada carrega nome, e-mail, perfil e vínculo com pessoa para alteração.
   A nova senha é opcional e, quando vazia, preserva o hash existente.
 - O sistema inicializa os perfis Administrador e Escriturário. O Administrador
-  recebe todas as 12 permissões; o Escriturário não recebe `users.manage` nem
+  recebe todas as 14 permissões; o Escriturário não recebe `users.manage` nem
   `closing.reopen`.
 
 ### Obras e equipamentos
@@ -208,16 +212,26 @@ autenticados. A permissão `help.manage` controla a rota administrativa `/ajuda`
 - Um tipo referenciado por equipamento, compra ou abastecimento é desativado em
   vez de excluído.
 - Fornecedores são empresas ativas marcadas como fornecedoras de combustível.
-- Compra registra data, cupom/nota, fornecedor, combustível, litros, preço unitário,
-  obra e contas. O total é `litros × preço`, arredondado para duas casas.
+- Tanque possui identificação única, classificação fixa ou móvel, capacidade,
+  combustível, observações e situação. Entradas e saídas produzem saldo e
+  histórico individual por reservatório.
+- Compra registra data, nota, fornecedor, tanque, combustível, litros, preço
+  unitário, obra, contas e pagamento à vista/a prazo. O total é `litros ×
+  preço`, arredondado para duas casas.
 - Compra e lançamento contábil correspondente são criados na mesma transação.
   A compra respeita a competência operacional da obra e não pode usar
   combustível inativo.
-- O saldo do tanque é global por tipo: total comprado menos total abastecido.
-- Abastecimento registra data, combustível, litros, equipamento, obra e,
-  opcionalmente, medidor, pessoa e observação. Não permite quantidade não
-  positiva nem saída superior ao saldo global.
-- A tela mostra até 50 compras e 50 abastecimentos recentes.
+- Compra a prazo credita a conta corrente do fornecedor. Pagamentos debitam o
+  extrato e geram lançamento contábil próprio.
+- O saldo é calculado por tanque; compras respeitam a capacidade e saídas não
+  podem ultrapassar o saldo disponível.
+- Equipamento abastecível informa capacidade do tanque e método de consumo.
+  Cada abastecimento completa o tanque e exige leitura do odômetro/horímetro.
+- Veículos calculam `km/L` pela diferença do odômetro dividida pelos litros;
+  máquinas calculam `L/h` pelos litros divididos pela diferença do horímetro.
+  O primeiro abastecimento estabelece a referência.
+- A saída é valorada pelo custo médio do reservatório e gera um lançamento
+  balanceado usando as contas de um tipo habilitado para abastecimentos.
 
 ### Almoxarifado
 
@@ -240,8 +254,8 @@ autenticados. A permissão `help.manage` controla a rota administrativa `/ajuda`
   diagnóstico, serviço, custo externo e instante da conclusão.
 - O banco prevê os estados aberta, em andamento, aguardando peça, concluída e
   cancelada, mas a interface ainda não opera todos esses estados.
-- O banco prevê peças e custos por ordem, mas a interface ainda não cadastra
-  peças nem gera baixa automática no almoxarifado.
+- A conclusão aceita até cinco peças e gera baixa automática no almoxarifado na
+  mesma transação da ordem.
 
 O relatório de centro de custos consulta somente obras ativas e competências que
 possuem lançamentos. O modo resumido soma quantidade, horas e valores por
@@ -251,7 +265,7 @@ em `SystemSettings`.
 
 ## Modelo de dados
 
-O schema possui 31 modelos:
+O schema possui 33 modelos:
 
 | Grupo | Modelo | Responsabilidade e vínculos principais |
 | --- | --- | --- |
@@ -280,15 +294,18 @@ O schema possui 31 modelos:
 | Contabilidade | `AccountingPeriod` | Estado aberto/fechado da competência por obra |
 | Contabilidade | `MonthlyClosing` | Consolidação mensal por obra e conta |
 | Combustível | `FuelType` | Catálogo, preço de referência e situação |
+| Combustível | `FuelTank` | Reservatório fixo/móvel, capacidade, combustível e saldo |
 | Combustível | `FuelPurchase` | Entrada no tanque e vínculo individual com lançamento contábil |
-| Combustível | `FuelDispense` | Saída do tanque para equipamento e obra |
+| Combustível | `FuelDispense` | Saída, medidor, média, custo e lançamento para equipamento/obra |
+| Combustível | `SupplierLedgerEntry` | Conta corrente de compras a prazo e pagamentos por fornecedor |
 | Estoque | `Product` | Item, unidade e estoque mínimo |
 | Estoque | `StockMovement` | Entrada, saída ou ajuste, com obra opcional |
 | Manutenção | `MaintenanceOrder` | Ordem numerada, equipamento, estado, serviços e custos |
 | Manutenção | `MaintenancePart` | Peça, quantidade e custo vinculados à ordem |
 
 Enums persistidos: `PersonType`, `EntryStatus`, `AccountNature`,
-`StockMovementKind`, `MaintenanceKind`, `MaintenanceStatus` e `PeriodStatus`.
+`StockMovementKind`, `MaintenanceKind`, `MaintenanceStatus`, `PeriodStatus`,
+`FuelTankKind`, `FuelPaymentTerm` e `ConsumptionMetric`.
 Valores monetários e quantitativos usam `Decimal`; identificadores internos usam
 `cuid`, exceto códigos/números autoincrementáveis de obra e ordem.
 
@@ -306,7 +323,7 @@ Valores monetários e quantitativos usam `Decimal`; identificadores internos usa
 | `accounting.manage` | `saveAccount`, `saveEntryType`, `deleteEntryType` e `saveEntry` |
 | `closing.close` | `closePeriod` |
 | `closing.reopen` | `reopenPeriod` |
-| `fuel.manage` | `saveFuelType`, `deleteFuelType`, `createFuelPurchase` e `createFuelDispense` |
+| `fuel.manage` | `saveFuelType`, `deleteFuelType`, `saveFuelTank`, `deleteFuelTank`, `createFuelPurchase`, `createSupplierPayment` e `createFuelDispense` |
 | `stock.manage` | `createProduct` e `createStockMovement` |
 | `maintenance.manage` | `createMaintenance` e `finishMaintenance` |
 
@@ -318,7 +335,7 @@ As ações relevantes registram `CREATE`, `UPDATE`, `DELETE`, `DEACTIVATE`,
 
 O seed cria/atualiza:
 
-- 12 permissões e os perfis `ADMIN` e `CLERK`;
+- 14 permissões e os perfis `ADMIN` e `CLERK`;
 - administrador indicado por `ADMIN_EMAIL`, sem redefinir a senha de usuário já
   existente;
 - funções Administrativo, Auxiliar, Mecânico, Motorista e Operador de máquinas;
@@ -329,7 +346,8 @@ O seed cria/atualiza:
   Passivo, Fornecedores, Receitas, Serviços, Serviços de máquinas, Despesas
   reembolsáveis, Reembolso de alimentação, Custos e despesas, Combustíveis,
   Manutenção, Materiais, Serviços de terceiros e Alimentação;
-- tipos Serviço de máquinas, Reembolso de alimentação e Alimentação paga.
+- tipos Serviço de máquinas, Reembolso de alimentação, Alimentação paga e
+  Consumo de combustível da frota.
 
 ## Histórico de banco
 
@@ -349,9 +367,10 @@ O seed cria/atualiza:
 | `20260828011500_add_user_theme` | Adiciona a preferência individual de tema à configuração de cada usuário |
 | `20260828014500_add_help_guides` | Cria os manuais, passos, imagens e a permissão de administração da ajuda |
 | `20260828183000_add_entry_type_references` | Adiciona ao tipo de lançamento os indicadores de equipamento e operador/motorista e configura Serviço de máquinas com ambos |
+| `20260915150000_add_fuel_tanks_and_supplier_ledger` | Individualiza tanques, vincula movimentações e cria conta corrente de fornecedores |
+| `20260915180000_add_fuel_consumption_and_accounting` | Adiciona capacidade/método, média de consumo, custo médio e contabilização das saídas |
 
-Produção possui as catorze migrations aplicadas, incluindo os manuais de ajuda
-e as referências do tipo de lançamento.
+Produção possui 16 migrations aplicadas.
 Nunca usar `prisma db push` em produção; mudanças de schema devem usar migration
 revisada e backup prévio.
 
@@ -392,22 +411,21 @@ revisada e backup prévio.
 - O smoke autenticado não funciona com `ADMIN_PASSWORD` depois que o
   administrador troca sua senha; recomenda-se usuário técnico próprio.
 - Erros de Server Actions ainda não possuem tratamento amigável uniforme.
-- Perfis, tipos de equipamento, produtos, movimentos, compras e abastecimentos
-  ainda não possuem edição pela interface.
+- Perfis, movimentos, compras e abastecimentos ainda não possuem edição pela
+  interface; lançamentos automáticos são protegidos contra edição contábil.
 - Não há recuperação de senha, segundo fator ou revogação central de JWTs.
 - O limitador de login em memória não atende múltiplas instâncias.
 - Não há tela de auditoria.
-- Saldo de combustível não é separado por tanque, local ou obra.
-- Abastecimento registra custo físico, mas não gera automaticamente lançamento
-  contábil de consumo.
-- Estoque não possui ajuste negativo específico nem integração com peças de
-  manutenção.
+- Tanques são individualizados, mas ainda não possuem transferência direta de
+  combustível entre reservatórios.
+- Estoque não possui ajuste negativo específico.
+- O consumo esperado ainda não gera alertas automáticos de desvio.
 - Estados intermediários/cancelamento de manutenção não estão disponíveis na
   interface.
 - Não há relatórios analíticos além do painel, listas operacionais e balancete
   de fechamento.
-- As evoluções implantadas foram reunidas na branch
-  `feat/evolucoes-operacionais`; o hash atual deve ser conferido no Git antes de
+- As evoluções implantadas estão na branch
+  `chore/documentacao-sistema-20260829`; o hash atual deve ser conferido no Git antes de
   cada nova implantação.
 
 ## Regra de manutenção desta documentação
