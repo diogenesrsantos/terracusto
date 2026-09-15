@@ -301,8 +301,11 @@ export async function saveWork(form: FormData) {
 
 export async function createEquipmentType(form: FormData) {
   const user = await requirePermission("assets.manage");
-  const row = await db.equipmentType.create({ data: { name: text(form, "name") } });
-  await audit(user.userId, "CREATE", "EquipmentType", row.id);
+  const id = optional(form, "id");
+  const row = id
+    ? await db.equipmentType.update({ where: { id }, data: { name: text(form, "name") } })
+    : await db.equipmentType.create({ data: { name: text(form, "name") } });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "EquipmentType", row.id);
   revalidatePath("/equipamentos");
 }
 
@@ -645,10 +648,10 @@ export async function createFuelDispense(form: FormData) {
 
 export async function createProduct(form: FormData) {
   const user = await requirePermission("stock.manage");
-  const row = await db.product.create({ data: {
-    code: text(form, "code").toUpperCase(), name: text(form, "name"), unit: text(form, "unit"), minimum: decimal(form, "minimum"),
-  }});
-  await audit(user.userId, "CREATE", "Product", row.id); revalidatePath("/almoxarifado");
+  const id = optional(form, "id");
+  const data = { code: text(form, "code").toUpperCase(), name: text(form, "name"), unit: text(form, "unit"), minimum: decimal(form, "minimum") };
+  const row = id ? await db.product.update({ where: { id }, data }) : await db.product.create({ data });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "Product", row.id); revalidatePath("/almoxarifado");
 }
 
 export async function createStockMovement(form: FormData) {
@@ -680,9 +683,26 @@ export async function createMaintenance(form: FormData) {
 
 export async function finishMaintenance(form: FormData) {
   const user = await requirePermission("maintenance.manage"); const id = text(form, "id");
-  await db.maintenanceOrder.update({ where: { id }, data: {
-    status: "DONE", finishedAt: new Date(), diagnosis: optional(form, "diagnosis"), service: optional(form, "service"),
-    externalCost: decimal(form, "externalCost"),
-  }});
+  const parts = Array.from({ length: 5 }, (_, index) => ({
+    productId: optional(form, `partProductId${index}`),
+    quantity: text(form, `partQuantity${index}`) ? decimal(form, `partQuantity${index}`) : null,
+    unitCost: text(form, `partUnitCost${index}`) ? decimal(form, `partUnitCost${index}`) : new Prisma.Decimal(0),
+  })).filter((part) => part.productId || part.quantity);
+  if (parts.some((part) => !part.productId || !part.quantity || part.quantity.lte(0))) throw new Error("Preencha corretamente todas as peças informadas.");
+  await db.$transaction(async (tx) => {
+    const order = await tx.maintenanceOrder.findUnique({ where: { id }, select: { id: true, status: true, workId: true } });
+    if (!order || order.status === "DONE") throw new Error("Esta ordem já foi concluída.");
+    for (const part of parts) {
+      const rows = await tx.stockMovement.groupBy({ by: ["kind"], where: { productId: part.productId! }, _sum: { quantity: true } });
+      const balance = rows.reduce((sum, row) => sum + (row.kind === "OUT" ? -1 : 1) * Number(row._sum.quantity || 0), 0);
+      if (Number(part.quantity) > balance) throw new Error("Estoque insuficiente para uma das peças.");
+      await tx.stockMovement.create({ data: { date: new Date(), kind: "OUT", quantity: part.quantity!, unitCost: part.unitCost, requester: "Manutenção", history: `OS #${id}`, productId: part.productId!, workId: order.workId, createdById: user.userId } });
+      await tx.maintenancePart.create({ data: { orderId: id, productId: part.productId!, quantity: part.quantity!, unitCost: part.unitCost } });
+    }
+    await tx.maintenanceOrder.update({ where: { id }, data: {
+      status: "DONE", finishedAt: new Date(), diagnosis: optional(form, "diagnosis"), service: optional(form, "service"), externalCost: decimal(form, "externalCost"),
+    } });
+  });
   await audit(user.userId, "FINISH", "MaintenanceOrder", id); revalidatePath("/manutencao");
+  revalidatePath("/almoxarifado");
 }

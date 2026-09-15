@@ -20,7 +20,7 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
   return <><PageHead title="Equipamentos" subtitle="Máquinas, veículos, ferramentas e outros ativos." />
     <section className="card"><h2>Novo tipo de equipamento</h2><form action={createEquipmentType} className="grid grid-2">
       <label className="field">Nome do tipo<input name="name" placeholder="Ex.: Caminhão basculante" required /></label><button className="btn">Cadastrar tipo</button>
-    </form></section>
+    </form><div className="chips mt">{equipmentTypes.map((type) => <details key={type.id}><summary>{type.name}</summary><form action={createEquipmentType} className="inline-form"><input type="hidden" name="id" value={type.id} /><input name="name" defaultValue={type.name} required /><button className="btn">Salvar</button></form></details>)}</div></section>
     <AssetsManager key={page} assets={assets.map((asset) => ({
       id: asset.id, equipmentTypeId: asset.equipmentTypeId, equipmentTypeName: asset.equipmentType.name,
       identifier: asset.identifier, description: asset.description, brand: asset.brand, model: asset.model,

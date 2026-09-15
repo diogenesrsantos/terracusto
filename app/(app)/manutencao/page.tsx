@@ -7,10 +7,10 @@ import { requirePermission } from "@/lib/auth";
 const status = { OPEN: "Aberta", IN_PROGRESS: "Em execução", WAITING_PART: "Aguardando peça", DONE: "Concluída", CANCELED: "Cancelada" };
 export default async function MaintenancePage() {
   await requirePermission("maintenance.manage");
-  const [orders, assets, works, people] = await Promise.all([
-    db.maintenanceOrder.findMany({ include: { asset: true, work: true, mechanic: true }, orderBy: { openedAt: "desc" }, take: 100 }),
+  const [orders, assets, works, people, products] = await Promise.all([
+    db.maintenanceOrder.findMany({ include: { asset: true, work: true, mechanic: true, parts: { include: { product: true } } }, orderBy: { openedAt: "desc" }, take: 100 }),
     db.asset.findMany({ where: { active: true }, orderBy: { identifier: "asc" } }), db.work.findMany({ where: { active: true }, orderBy: { code: "asc" } }),
-    db.person.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    db.person.findMany({ where: { active: true }, orderBy: { name: "asc" } }), db.product.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
   return <><PageHead title="Manutenção" subtitle="Ordens preventivas e corretivas de máquinas e veículos." />
     <section className="card"><h2>Abrir ordem de serviço</h2><form action={createMaintenance} className="form-grid">
@@ -22,7 +22,7 @@ export default async function MaintenancePage() {
       <label className="field">Defeito/solicitação<input name="complaint" required /></label><button className="btn span-4">Abrir ordem</button>
     </form></section>
     <section className="card mt"><h2>Ordens de serviço</h2>{orders.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>OS</th><th>Abertura</th><th>Equipamento</th><th>Tipo/status</th><th>Solicitação</th><th>Responsável</th><th>Custo externo</th><th>Conclusão</th></tr></thead><tbody>
-      {orders.map((o) => <tr key={o.id}><td><strong>#{o.number}</strong></td><td>{o.openedAt.toLocaleDateString("pt-BR")}</td><td>{o.asset.identifier}<br /><small>{o.asset.description}</small></td><td>{o.kind === "PREVENTIVE" ? "Preventiva" : "Corretiva"}<br /><span className={`badge ${o.status === "DONE" ? "" : "warn"}`}>{status[o.status]}</span></td><td>{o.complaint}{o.diagnosis && <><br /><small>Diagnóstico: {o.diagnosis}</small></>}</td><td>{o.mechanic?.name || "—"}</td><td>{money(o.externalCost)}</td><td>{o.status !== "DONE" ? <form action={finishMaintenance} className="grid"><input type="hidden" name="id" value={o.id} /><input name="diagnosis" placeholder="Diagnóstico" required /><input name="service" placeholder="Serviço executado" required /><input name="externalCost" type="number" step="0.01" defaultValue="0" /><button className="btn">Concluir</button></form> : o.finishedAt?.toLocaleDateString("pt-BR")}</td></tr>)}
+      {orders.map((o) => <tr key={o.id}><td><strong>#{o.number}</strong></td><td>{o.openedAt.toLocaleDateString("pt-BR")}</td><td>{o.asset.identifier}<br /><small>{o.asset.description}</small></td><td>{o.kind === "PREVENTIVE" ? "Preventiva" : "Corretiva"}<br /><span className={`badge ${o.status === "DONE" ? "" : "warn"}`}>{status[o.status]}</span></td><td>{o.complaint}{o.diagnosis && <><br /><small>Diagnóstico: {o.diagnosis}</small></>}{o.parts.length > 0 && <><br /><small>Peças: {o.parts.map((part) => `${part.product.name} (${part.quantity})`).join(", ")}</small></>}</td><td>{o.mechanic?.name || "—"}</td><td>{money(o.externalCost)}</td><td>{o.status !== "DONE" ? <form action={finishMaintenance} className="grid"><input type="hidden" name="id" value={o.id} /><input name="diagnosis" placeholder="Diagnóstico" required /><input name="service" placeholder="Serviço executado" required /><input name="externalCost" type="number" step="0.01" defaultValue="0" />{Array.from({ length: 5 }, (_, index) => <div className="inline-form" key={index}><select name={`partProductId${index}`}><option value="">Sem peça {index + 1}</option>{products.map((product) => <option key={product.id} value={product.id}>{product.code} — {product.name}</option>)}</select><input name={`partQuantity${index}`} type="number" min="0.001" step="0.001" placeholder="Qtd." /><input name={`partUnitCost${index}`} type="number" min="0" step="0.0001" placeholder="Custo" /></div>)}<button className="btn">Concluir e baixar peças</button></form> : o.finishedAt?.toLocaleDateString("pt-BR")}</td></tr>)}
     </tbody></table></div>}</section>
   </>;
 }
