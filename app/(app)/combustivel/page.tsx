@@ -1,12 +1,8 @@
-import { createFuelDispense, createFuelPurchase } from "@/app/actions";
-import { Empty, PageHead } from "@/components/page";
-import { FuelTypeManager } from "@/components/fuel-type-manager";
-import { db } from "@/lib/db";
-import { money, number } from "@/lib/format";
-import { requirePermission } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default async function FuelPage() {
-  await requirePermission("fuel.manage");
+export default function FuelPage() {
+  redirect("/combustivel/compras");
+/*
   const [fuelTypes, suppliers, works, assets, people, accounts, purchases, dispenses] = await Promise.all([
     db.fuelType.findMany({ orderBy: { name: "asc" } }), db.company.findMany({ where: { active: true, isFuelSupplier: true }, orderBy: { name: "asc" } }),
     db.work.findMany({ where: { active: true }, orderBy: { code: "asc" } }), db.asset.findMany({ where: { active: true, fuelType: { active: true } }, orderBy: { identifier: "asc" } }),
@@ -44,4 +40,5 @@ export default async function FuelPage() {
       <div className="card"><h2>Últimos abastecimentos</h2>{dispenses.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Equipamento</th><th>Obra</th><th>Litros</th><th>Operador</th></tr></thead><tbody>{dispenses.map((d) => <tr key={d.id}><td>{d.date.toLocaleDateString("pt-BR", {timeZone:"UTC"})}</td><td>{d.asset.identifier}</td><td>{d.work.code}</td><td>{number(d.liters, 3)}</td><td>{d.person?.name || "—"}</td></tr>)}</tbody></table></div>}</div>
     </section>
   </>;
+*/
 }

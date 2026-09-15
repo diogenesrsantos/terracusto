@@ -362,7 +362,7 @@ export async function saveAccount(form: FormData) {
   revalidatePath("/plano-contas");
   revalidatePath("/tipos-lancamento");
   revalidatePath("/lancamentos");
-  revalidatePath("/combustivel");
+  revalidatePath("/combustivel"); revalidatePath("/combustivel/compras"); revalidatePath("/combustivel/abastecimentos"); revalidatePath("/tipos-combustiveis");
   redirect("/plano-contas");
 }
 
@@ -624,7 +624,7 @@ export async function createFuelPurchase(form: FormData) {
       entryId: entry.id, createdById: user.userId,
     }});
   });
-  await audit(user.userId, "CREATE", "FuelPurchase", row.id); revalidatePath("/combustivel");
+  await audit(user.userId, "CREATE", "FuelPurchase", row.id); revalidatePath("/combustivel"); revalidatePath("/combustivel/compras");
 }
 
 export async function createFuelDispense(form: FormData) {
@@ -643,7 +643,7 @@ export async function createFuelDispense(form: FormData) {
     notes: optional(form, "notes"), fuelTypeId, assetId: text(form, "assetId"), workId: text(form, "workId"),
     personId: optional(form, "personId"), createdById: user.userId,
   }});
-  await audit(user.userId, "CREATE", "FuelDispense", row.id); revalidatePath("/combustivel");
+  await audit(user.userId, "CREATE", "FuelDispense", row.id); revalidatePath("/combustivel"); revalidatePath("/combustivel/abastecimentos"); revalidatePath("/combustivel/compras");
 }
 
 export async function createProduct(form: FormData) {

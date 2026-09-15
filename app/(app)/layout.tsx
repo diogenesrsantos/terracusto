@@ -13,6 +13,7 @@ const groups = [
     ["people.manage", "/pessoas", "Pessoas"], ["users.manage", "/usuarios", "Usuários e acessos"],
     ["companies.manage", "/empresas", "Empresas"], ["works.manage", "/obras", "Obras"],
     ["assets.manage", "/equipamentos", "Equipamentos"],
+    ["fuel.manage", "/tipos-combustiveis", "Tipos de combustíveis"],
     ["settings.manage", "/configuracoes", "Configurações da empresa"],
     ["help.manage", "/ajuda", "Manuais de ajuda"],
   ] },
@@ -23,7 +24,8 @@ const groups = [
     ["closing.close", "/fechamentos", "Fechamentos"],
   ] },
   { label: "Operacional", items: [
-    ["fuel.manage", "/combustivel", "Combustível"], ["stock.manage", "/almoxarifado", "Almoxarifado"],
+    ["fuel.manage", "/combustivel/compras", "Compras"], ["fuel.manage", "/combustivel/abastecimentos", "Abastecimentos"],
+    ["stock.manage", "/almoxarifado", "Almoxarifado"],
     ["maintenance.manage", "/manutencao", "Manutenção"],
   ] },
 ] as const;
