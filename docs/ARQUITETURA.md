@@ -83,6 +83,8 @@ O schema possui 31 modelos, agrupados assim:
 - Contabilidade: `Account`, `AccountingEntry`, `AccountingLine`,
   `AccountingPeriod`, `MonthlyClosing` e `EntryType`.
 - Combustível: `FuelType`, `FuelPurchase` e `FuelDispense`.
+- Reservatórios e fornecedores: `FuelTank` individualiza capacidade e saldo;
+  `SupplierLedgerEntry` mantém débitos e créditos da conta corrente de postos.
 - Estoque: `Product` e `StockMovement`.
 - Manutenção: `MaintenanceOrder` e `MaintenancePart`.
 

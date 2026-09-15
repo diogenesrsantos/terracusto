@@ -14,6 +14,7 @@ const groups = [
     ["companies.manage", "/empresas", "Empresas"], ["works.manage", "/obras", "Obras"],
     ["assets.manage", "/equipamentos", "Equipamentos"],
     ["fuel.manage", "/tipos-combustiveis", "Tipos de combustíveis"],
+    ["fuel.manage", "/tanques-combustivel", "Tanques de combustível"],
     ["settings.manage", "/configuracoes", "Configurações da empresa"],
     ["help.manage", "/ajuda", "Manuais de ajuda"],
   ] },

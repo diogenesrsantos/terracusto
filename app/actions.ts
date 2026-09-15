@@ -582,65 +582,160 @@ export async function saveFuelType(form: FormData) {
     : await db.fuelType.create({ data });
   await audit(user.userId, id ? "UPDATE" : "CREATE", "FuelType", row.id);
   revalidatePath("/combustivel");
+  revalidatePath("/tipos-combustiveis");
+  revalidatePath("/tanques-combustivel");
+  revalidatePath("/combustivel/compras");
+  revalidatePath("/combustivel/abastecimentos");
   revalidatePath("/equipamentos");
 }
 
 export async function deleteFuelType(form: FormData) {
   const user = await requirePermission("fuel.manage");
   const id = text(form, "id");
-  const [assets, purchases, dispenses] = await Promise.all([
+  const [assets, purchases, dispenses, tanks] = await Promise.all([
     db.asset.count({ where: { fuelTypeId: id } }),
     db.fuelPurchase.count({ where: { fuelTypeId: id } }),
     db.fuelDispense.count({ where: { fuelTypeId: id } }),
+    db.fuelTank.count({ where: { fuelTypeId: id } }),
   ]);
-  const referenced = assets + purchases + dispenses > 0;
+  const referenced = assets + purchases + dispenses + tanks > 0;
   if (referenced) await db.fuelType.update({ where: { id }, data: { active: false } });
   else await db.fuelType.delete({ where: { id } });
   await audit(user.userId, referenced ? "DEACTIVATE" : "DELETE", "FuelType", id);
   revalidatePath("/combustivel");
+  revalidatePath("/tipos-combustiveis");
+  revalidatePath("/tanques-combustivel");
+  revalidatePath("/combustivel/compras");
+  revalidatePath("/combustivel/abastecimentos");
   revalidatePath("/equipamentos");
+}
+
+export async function saveFuelTank(form: FormData) {
+  const user = await requirePermission("fuel.manage");
+  const id = optional(form, "id");
+  const capacity = decimal(form, "capacity");
+  if (capacity.lte(0)) throw new Error("A capacidade do tanque deve ser maior que zero.");
+  const data = {
+    name: text(form, "name"), kind: text(form, "kind") as "FIXED" | "MOBILE", capacity,
+    fuelTypeId: text(form, "fuelTypeId"), notes: optional(form, "notes"), active: id ? text(form, "active") === "true" : true,
+  };
+  if (id) {
+    const current = await db.fuelTank.findUniqueOrThrow({ where: { id }, select: { fuelTypeId: true } });
+    const [purchases, dispenses] = await Promise.all([
+      db.fuelPurchase.aggregate({ where: { tankId: id }, _sum: { liters: true } }),
+      db.fuelDispense.aggregate({ where: { tankId: id }, _sum: { liters: true } }),
+    ]);
+    const balance = (purchases._sum.liters ?? new Prisma.Decimal(0)).minus(dispenses._sum.liters ?? 0);
+    if (capacity.lt(balance)) throw new Error("A capacidade não pode ser menor que o saldo atual do tanque.");
+    if ((Number(purchases._sum.liters || 0) > 0 || Number(dispenses._sum.liters || 0) > 0) && current.fuelTypeId !== data.fuelTypeId) throw new Error("O combustível não pode ser alterado depois que o tanque possui movimentações.");
+  }
+  const row = id ? await db.fuelTank.update({ where: { id }, data }) : await db.fuelTank.create({ data });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "FuelTank", row.id);
+  revalidatePath("/tanques-combustivel"); revalidatePath("/combustivel/compras"); revalidatePath("/combustivel/abastecimentos");
+}
+
+export async function deleteFuelTank(form: FormData) {
+  const user = await requirePermission("fuel.manage");
+  const id = text(form, "id");
+  const referenced = await db.fuelPurchase.count({ where: { tankId: id } }) + await db.fuelDispense.count({ where: { tankId: id } });
+  if (referenced) await db.fuelTank.update({ where: { id }, data: { active: false } });
+  else await db.fuelTank.delete({ where: { id } });
+  await audit(user.userId, referenced ? "DEACTIVATE" : "DELETE", "FuelTank", id);
+  revalidatePath("/tanques-combustivel"); revalidatePath("/combustivel/compras"); revalidatePath("/combustivel/abastecimentos");
 }
 
 export async function createFuelPurchase(form: FormData) {
   const user = await requirePermission("fuel.manage");
   const date = when(form, "date"); const workId = text(form, "workId");
   const competence = await assertOpen(workId, date);
-  const fuelTypeId = text(form, "fuelTypeId");
-  const fuelType = await db.fuelType.findFirst({ where: { id: fuelTypeId, active: true }, select: { id: true } });
-  if (!fuelType) throw new Error("Selecione um combustível ativo.");
+  const tankId = text(form, "tankId");
+  const tank = await db.fuelTank.findFirst({ where: { id: tankId, active: true, fuelType: { active: true } }, select: { id: true, fuelTypeId: true, capacity: true } });
+  if (!tank) throw new Error("Selecione um tanque ativo.");
+  const fuelTypeId = tank.fuelTypeId;
   const liters = decimal(form, "liters"); const unitPrice = decimal(form, "unitPrice"); const total = liters.mul(unitPrice).toDecimalPlaces(2);
+  if (liters.lte(0) || unitPrice.lte(0)) throw new Error("Quantidade e preço devem ser maiores que zero.");
+  const supplierId = text(form, "supplierId"); const coupon = text(form, "coupon");
+  const paymentTerm = text(form, "paymentTerm") as "CASH" | "CREDIT";
+  if (!(["CASH", "CREDIT"] as const).includes(paymentTerm)) throw new Error("Forma de pagamento inválida.");
+  const [supplier, validAccounts] = await Promise.all([
+    db.company.findFirst({ where: { id: supplierId, active: true, isFuelSupplier: true }, select: { id: true } }),
+    db.account.count({ where: { id: { in: [text(form, "debitAccountId"), text(form, "creditAccountId")] }, active: true, analytic: true } }),
+  ]);
+  if (!supplier) throw new Error("Selecione um fornecedor de combustível ativo.");
+  if (validAccounts !== 2 || text(form, "debitAccountId") === text(form, "creditAccountId")) throw new Error("As contas contábeis devem ser analíticas, ativas e diferentes.");
   const row = await db.$transaction(async (tx) => {
+    const [inputs, outputs] = await Promise.all([
+      tx.fuelPurchase.aggregate({ where: { tankId }, _sum: { liters: true } }),
+      tx.fuelDispense.aggregate({ where: { tankId }, _sum: { liters: true } }),
+    ]);
+    const balance = (inputs._sum.liters ?? new Prisma.Decimal(0)).minus(outputs._sum.liters ?? 0);
+    if (balance.plus(liters).gt(tank.capacity)) throw new Error("A compra ultrapassa a capacidade disponível do tanque.");
     const entry = await tx.accountingEntry.create({ data: {
-      date, competence, history: `Compra de combustível - cupom ${text(form, "coupon")}`,
-      document: text(form, "coupon"), workId, createdById: user.userId,
+      date, competence, history: `Compra de combustível - nota ${coupon}`,
+      document: coupon, workId, createdById: user.userId,
       lines: { create: [
         { accountId: text(form, "debitAccountId"), debit: total, credit: 0 },
         { accountId: text(form, "creditAccountId"), debit: 0, credit: total },
       ] },
     }});
-    return tx.fuelPurchase.create({ data: {
-      date, coupon: text(form, "coupon"), liters, unitPrice, total,
-      supplierId: text(form, "supplierId"), fuelTypeId, workId,
+    const purchase = await tx.fuelPurchase.create({ data: {
+      date, coupon, liters, unitPrice, total, tankId, paymentTerm,
+      supplierId, fuelTypeId, workId,
       entryId: entry.id, createdById: user.userId,
     }});
-  });
+    if (paymentTerm === "CREDIT") await tx.supplierLedgerEntry.create({ data: {
+      date, description: `Compra de combustível - ${coupon}`, document: coupon, credit: total,
+      supplierId, purchaseId: purchase.id, entryId: entry.id, createdById: user.userId,
+    }});
+    return purchase;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   await audit(user.userId, "CREATE", "FuelPurchase", row.id); revalidatePath("/combustivel"); revalidatePath("/combustivel/compras");
+}
+
+export async function createSupplierPayment(form: FormData) {
+  const user = await requirePermission("fuel.manage");
+  const supplierId = text(form, "supplierId"); const workId = text(form, "workId"); const date = when(form, "date");
+  const amount = decimal(form, "amount"); const document = optional(form, "document");
+  const competence = await assertOpen(workId, date);
+  const [supplier, ledger, validAccounts] = await Promise.all([
+    db.company.findFirst({ where: { id: supplierId, active: true, isFuelSupplier: true }, select: { id: true, name: true } }),
+    db.supplierLedgerEntry.aggregate({ where: { supplierId }, _sum: { debit: true, credit: true } }),
+    db.account.count({ where: { id: { in: [text(form, "debitAccountId"), text(form, "creditAccountId")] }, active: true, analytic: true } }),
+  ]);
+  const balance = (ledger._sum.credit ?? new Prisma.Decimal(0)).minus(ledger._sum.debit ?? 0);
+  if (!supplier) throw new Error("Selecione um fornecedor ativo.");
+  if (amount.lte(0) || amount.gt(balance)) throw new Error("O valor do pagamento é inválido ou superior ao saldo do fornecedor.");
+  if (validAccounts !== 2 || text(form, "debitAccountId") === text(form, "creditAccountId")) throw new Error("As contas contábeis devem ser analíticas, ativas e diferentes.");
+  const row = await db.$transaction(async (tx) => {
+    const entry = await tx.accountingEntry.create({ data: {
+      date, competence, history: `Pagamento a fornecedor de combustível - ${supplier.name}`, document,
+      workId, createdById: user.userId, lines: { create: [
+        { accountId: text(form, "debitAccountId"), debit: amount, credit: 0 },
+        { accountId: text(form, "creditAccountId"), debit: 0, credit: amount },
+      ] },
+    }});
+    return tx.supplierLedgerEntry.create({ data: { date, description: `Pagamento - ${supplier.name}`, document, debit: amount, supplierId, entryId: entry.id, createdById: user.userId } });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  await audit(user.userId, "CREATE", "SupplierLedgerEntry", row.id);
+  revalidatePath("/combustivel/compras"); revalidatePath("/lancamentos");
 }
 
 export async function createFuelDispense(form: FormData) {
   const user = await requirePermission("fuel.manage");
-  const fuelTypeId = text(form, "fuelTypeId"); const liters = decimal(form, "liters");
-  const [fuelType, purchases, dispenses] = await Promise.all([
-    db.fuelType.findFirst({ where: { id: fuelTypeId, active: true }, select: { id: true } }),
-    db.fuelPurchase.aggregate({ where: { fuelTypeId }, _sum: { liters: true } }),
-    db.fuelDispense.aggregate({ where: { fuelTypeId }, _sum: { liters: true } }),
+  const tankId = text(form, "tankId"); const liters = decimal(form, "liters");
+  const [tank, purchases, dispenses] = await Promise.all([
+    db.fuelTank.findFirst({ where: { id: tankId, active: true }, select: { id: true, fuelTypeId: true } }),
+    db.fuelPurchase.aggregate({ where: { tankId }, _sum: { liters: true } }),
+    db.fuelDispense.aggregate({ where: { tankId }, _sum: { liters: true } }),
   ]);
-  if (!fuelType) throw new Error("Selecione um combustível ativo.");
+  if (!tank) throw new Error("Selecione um tanque ativo.");
+  const asset = await db.asset.findFirst({ where: { id: text(form, "assetId"), active: true }, select: { fuelTypeId: true } });
+  if (!asset || asset.fuelTypeId !== tank.fuelTypeId) throw new Error("O combustível do tanque não corresponde ao equipamento selecionado.");
   const available = (purchases._sum.liters ?? new Prisma.Decimal(0)).minus(dispenses._sum.liters ?? 0);
   if (liters.lte(0) || liters.gt(available)) throw new Error("Saldo de combustível insuficiente.");
   const row = await db.fuelDispense.create({ data: {
     date: when(form, "date"), liters, meter: text(form, "meter") ? decimal(form, "meter") : null,
-    notes: optional(form, "notes"), fuelTypeId, assetId: text(form, "assetId"), workId: text(form, "workId"),
+    notes: optional(form, "notes"), fuelTypeId: tank.fuelTypeId, tankId, assetId: text(form, "assetId"), workId: text(form, "workId"),
     personId: optional(form, "personId"), createdById: user.userId,
   }});
   await audit(user.userId, "CREATE", "FuelDispense", row.id); revalidatePath("/combustivel"); revalidatePath("/combustivel/abastecimentos"); revalidatePath("/combustivel/compras");

@@ -1,5 +1,14 @@
 # Estado atual
 
+Em 15/09/2026, a primeira etapa da evolução de combustível passou a controlar
+reservatórios fixos e móveis, capacidade, combustível e saldo individual. As
+compras são vinculadas ao tanque e identificam pagamento à vista ou a prazo;
+compras a prazo alimentam a conta corrente do fornecedor, que também permite
+registrar pagamentos com lançamento contábil. O cadastro de tanques apresenta
+o histórico recente de entradas e saídas. A migration
+`20260915150000_add_fuel_tanks_and_supplier_ledger` preserva o histórico
+anterior criando tanques de legado por tipo de combustível.
+
 Registro da implantação inicial, validado em **26/08/2026**, no fuso
 `America/Bahia`.
 

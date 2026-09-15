@@ -47,6 +47,16 @@ enum PeriodStatus {
   CLOSED
 }
 
+enum FuelTankKind {
+  FIXED
+  MOBILE
+}
+
+enum FuelPaymentTerm {
+  CASH
+  CREDIT
+}
+
 model Person {
   id            String             @id @default(cuid())
   name          String
@@ -293,30 +303,31 @@ model EntryType {
 }
 
 model AccountingEntry {
-  id            String           @id @default(cuid())
-  date          DateTime
-  competence    DateTime
-  history       String
-  document      String?
-  status        EntryStatus      @default(POSTED)
-  workId        String
-  personId      String?
-  assetId       String?
-  entryTypeId   String?
-  startAt       DateTime?
-  endAt         DateTime?
-  secondStartAt DateTime?
-  secondEndAt   DateTime?
-  hours         Decimal?         @db.Decimal(10, 2)
-  createdById   String
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  work          Work             @relation(fields: [workId], references: [id])
-  person        Person?          @relation("EntryPerson", fields: [personId], references: [id])
-  asset         Asset?           @relation(fields: [assetId], references: [id])
-  entryType     EntryType?       @relation(fields: [entryTypeId], references: [id])
-  lines         AccountingLine[]
-  fuelPurchase  FuelPurchase?
+  id                  String               @id @default(cuid())
+  date                DateTime
+  competence          DateTime
+  history             String
+  document            String?
+  status              EntryStatus          @default(POSTED)
+  workId              String
+  personId            String?
+  assetId             String?
+  entryTypeId         String?
+  startAt             DateTime?
+  endAt               DateTime?
+  secondStartAt       DateTime?
+  secondEndAt         DateTime?
+  hours               Decimal?             @db.Decimal(10, 2)
+  createdById         String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  work                Work                 @relation(fields: [workId], references: [id])
+  person              Person?              @relation("EntryPerson", fields: [personId], references: [id])
+  asset               Asset?               @relation(fields: [assetId], references: [id])
+  entryType           EntryType?           @relation(fields: [entryTypeId], references: [id])
+  lines               AccountingLine[]
+  fuelPurchase        FuelPurchase?
+  supplierLedgerEntry SupplierLedgerEntry?
 
   @@index([workId, competence, status])
   @@index([entryTypeId])
@@ -354,15 +365,16 @@ model MonthlyClosing {
 }
 
 model Company {
-  id             String         @id @default(cuid())
+  id             String                @id @default(cuid())
   name           String
-  document       String?        @unique
-  isFuelSupplier Boolean        @default(false)
-  active         Boolean        @default(true)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  document       String?               @unique
+  isFuelSupplier Boolean               @default(false)
+  active         Boolean               @default(true)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
   works          Work[]
   fuelPurchases  FuelPurchase[]
+  supplierLedger SupplierLedgerEntry[]
 }
 
 model FuelType {
@@ -373,27 +385,50 @@ model FuelType {
   assets         Asset[]
   purchases      FuelPurchase[]
   dispenses      FuelDispense[]
+  tanks          FuelTank[]
+}
+
+model FuelTank {
+  id         String         @id @default(cuid())
+  name       String         @unique
+  kind       FuelTankKind
+  capacity   Decimal        @db.Decimal(14, 3)
+  active     Boolean        @default(true)
+  notes      String?
+  fuelTypeId String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  fuelType   FuelType       @relation(fields: [fuelTypeId], references: [id])
+  purchases  FuelPurchase[]
+  dispenses  FuelDispense[]
+
+  @@index([fuelTypeId, active])
 }
 
 model FuelPurchase {
-  id          String           @id @default(cuid())
-  date        DateTime
-  coupon      String
-  liters      Decimal          @db.Decimal(14, 3)
-  unitPrice   Decimal          @db.Decimal(12, 4)
-  total       Decimal          @db.Decimal(14, 2)
-  supplierId  String
-  fuelTypeId  String
-  workId      String
-  entryId     String?          @unique
-  createdById String
-  createdAt   DateTime         @default(now())
-  supplier    Company          @relation(fields: [supplierId], references: [id])
-  fuelType    FuelType         @relation(fields: [fuelTypeId], references: [id])
-  work        Work             @relation(fields: [workId], references: [id])
-  entry       AccountingEntry? @relation(fields: [entryId], references: [id])
+  id                  String               @id @default(cuid())
+  date                DateTime
+  coupon              String
+  liters              Decimal              @db.Decimal(14, 3)
+  unitPrice           Decimal              @db.Decimal(12, 4)
+  total               Decimal              @db.Decimal(14, 2)
+  supplierId          String
+  fuelTypeId          String
+  tankId              String
+  paymentTerm         FuelPaymentTerm      @default(CASH)
+  workId              String
+  entryId             String?              @unique
+  createdById         String
+  createdAt           DateTime             @default(now())
+  supplier            Company              @relation(fields: [supplierId], references: [id])
+  fuelType            FuelType             @relation(fields: [fuelTypeId], references: [id])
+  tank                FuelTank             @relation(fields: [tankId], references: [id])
+  work                Work                 @relation(fields: [workId], references: [id])
+  entry               AccountingEntry?     @relation(fields: [entryId], references: [id])
+  supplierLedgerEntry SupplierLedgerEntry?
 
   @@index([date, supplierId])
+  @@index([tankId, date])
 }
 
 model FuelDispense {
@@ -403,17 +438,39 @@ model FuelDispense {
   meter       Decimal? @db.Decimal(14, 2)
   notes       String?
   fuelTypeId  String
+  tankId      String
   assetId     String
   workId      String
   personId    String?
   createdById String
   createdAt   DateTime @default(now())
   fuelType    FuelType @relation(fields: [fuelTypeId], references: [id])
+  tank        FuelTank @relation(fields: [tankId], references: [id])
   asset       Asset    @relation(fields: [assetId], references: [id])
   work        Work     @relation(fields: [workId], references: [id])
   person      Person?  @relation(fields: [personId], references: [id])
 
   @@index([date, assetId])
+  @@index([tankId, date])
+}
+
+model SupplierLedgerEntry {
+  id          String           @id @default(cuid())
+  date        DateTime
+  description String
+  document    String?
+  debit       Decimal          @default(0) @db.Decimal(14, 2)
+  credit      Decimal          @default(0) @db.Decimal(14, 2)
+  supplierId  String
+  purchaseId  String?          @unique
+  entryId     String?          @unique
+  createdById String
+  createdAt   DateTime         @default(now())
+  supplier    Company          @relation(fields: [supplierId], references: [id])
+  purchase    FuelPurchase?    @relation(fields: [purchaseId], references: [id])
+  entry       AccountingEntry? @relation(fields: [entryId], references: [id])
+
+  @@index([supplierId, date])
 }
 
 model Product {
