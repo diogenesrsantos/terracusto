@@ -57,6 +57,11 @@ enum FuelPaymentTerm {
   CREDIT
 }
 
+enum ConsumptionMetric {
+  LITERS_PER_HOUR
+  KM_PER_LITER
+}
+
 model Person {
   id            String             @id @default(cuid())
   name          String
@@ -239,22 +244,24 @@ model AccountingPeriod {
 }
 
 model Asset {
-  id              String             @id @default(cuid())
-  equipmentTypeId String
-  identifier      String             @unique
-  description     String
-  brand           String?
-  model           String?
-  fuelTypeId      String?
-  expectedUsage   Decimal?           @db.Decimal(12, 3)
-  active          Boolean            @default(true)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  equipmentType   EquipmentType      @relation(fields: [equipmentTypeId], references: [id])
-  fuelType        FuelType?          @relation(fields: [fuelTypeId], references: [id])
-  entries         AccountingEntry[]
-  dispenses       FuelDispense[]
-  maintenance     MaintenanceOrder[]
+  id                String             @id @default(cuid())
+  equipmentTypeId   String
+  identifier        String             @unique
+  description       String
+  brand             String?
+  model             String?
+  fuelTypeId        String?
+  expectedUsage     Decimal?           @db.Decimal(12, 3)
+  fuelTankCapacity  Decimal?           @db.Decimal(14, 3)
+  consumptionMetric ConsumptionMetric?
+  active            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  equipmentType     EquipmentType      @relation(fields: [equipmentTypeId], references: [id])
+  fuelType          FuelType?          @relation(fields: [fuelTypeId], references: [id])
+  entries           AccountingEntry[]
+  dispenses         FuelDispense[]
+  maintenance       MaintenanceOrder[]
 
   @@index([equipmentTypeId])
 }
@@ -290,6 +297,7 @@ model EntryType {
   active                 Boolean           @default(true)
   requiresAsset          Boolean           @default(false)
   requiresPerson         Boolean           @default(false)
+  forFuelDispense        Boolean           @default(false)
   defaultDebitAccountId  String
   defaultCreditAccountId String
   createdAt              DateTime          @default(now())
@@ -327,6 +335,7 @@ model AccountingEntry {
   entryType           EntryType?           @relation(fields: [entryTypeId], references: [id])
   lines               AccountingLine[]
   fuelPurchase        FuelPurchase?
+  fuelDispense        FuelDispense?
   supplierLedgerEntry SupplierLedgerEntry?
 
   @@index([workId, competence, status])
@@ -432,23 +441,30 @@ model FuelPurchase {
 }
 
 model FuelDispense {
-  id          String   @id @default(cuid())
-  date        DateTime
-  liters      Decimal  @db.Decimal(14, 3)
-  meter       Decimal? @db.Decimal(14, 2)
-  notes       String?
-  fuelTypeId  String
-  tankId      String
-  assetId     String
-  workId      String
-  personId    String?
-  createdById String
-  createdAt   DateTime @default(now())
-  fuelType    FuelType @relation(fields: [fuelTypeId], references: [id])
-  tank        FuelTank @relation(fields: [tankId], references: [id])
-  asset       Asset    @relation(fields: [assetId], references: [id])
-  work        Work     @relation(fields: [workId], references: [id])
-  person      Person?  @relation(fields: [personId], references: [id])
+  id              String           @id @default(cuid())
+  date            DateTime
+  liters          Decimal          @db.Decimal(14, 3)
+  meter           Decimal?         @db.Decimal(14, 2)
+  fullTank        Boolean          @default(true)
+  meterDelta      Decimal?         @db.Decimal(14, 2)
+  consumptionRate Decimal?         @db.Decimal(14, 3)
+  unitCost        Decimal          @default(0) @db.Decimal(12, 4)
+  totalCost       Decimal          @default(0) @db.Decimal(14, 2)
+  notes           String?
+  fuelTypeId      String
+  tankId          String
+  assetId         String
+  workId          String
+  personId        String?
+  createdById     String
+  entryId         String?          @unique
+  createdAt       DateTime         @default(now())
+  fuelType        FuelType         @relation(fields: [fuelTypeId], references: [id])
+  tank            FuelTank         @relation(fields: [tankId], references: [id])
+  asset           Asset            @relation(fields: [assetId], references: [id])
+  work            Work             @relation(fields: [workId], references: [id])
+  person          Person?          @relation(fields: [personId], references: [id])
+  entry           AccountingEntry? @relation(fields: [entryId], references: [id])
 
   @@index([date, assetId])
   @@index([tankId, date])

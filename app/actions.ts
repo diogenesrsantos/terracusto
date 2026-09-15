@@ -312,11 +312,15 @@ export async function createEquipmentType(form: FormData) {
 export async function saveAsset(form: FormData) {
   const user = await requirePermission("assets.manage");
   const id = optional(form, "id");
+  const fuelTypeId = optional(form, "fuelTypeId");
+  const fuelTankCapacity = text(form, "fuelTankCapacity") ? decimal(form, "fuelTankCapacity") : null;
+  const consumptionMetric = optional(form, "consumptionMetric") as "LITERS_PER_HOUR" | "KM_PER_LITER" | null;
+  if ((fuelTankCapacity || consumptionMetric) && (!fuelTypeId || !fuelTankCapacity || fuelTankCapacity.lte(0) || !consumptionMetric)) throw new Error("Informe combustível, capacidade do tanque e método de consumo.");
   const data = {
     equipmentTypeId: text(form, "equipmentTypeId"),
     identifier: text(form, "identifier").toUpperCase().replace(/[^A-Z0-9-]/g, ""),
     description: text(form, "description"), brand: optional(form, "brand"), model: optional(form, "model"),
-    fuelTypeId: optional(form, "fuelTypeId"), expectedUsage: text(form, "expectedUsage") ? decimal(form, "expectedUsage") : null,
+    fuelTypeId, fuelTankCapacity, consumptionMetric, expectedUsage: text(form, "expectedUsage") ? decimal(form, "expectedUsage") : null,
   };
   const row = id ? await db.asset.update({ where: { id }, data }) : await db.asset.create({ data });
   await audit(user.userId, id ? "UPDATE" : "CREATE", "Asset", row.id);
@@ -382,6 +386,7 @@ export async function saveEntryType(form: FormData) {
     active: id ? text(form, "active") === "true" : true,
     requiresAsset: form.get("requiresAsset") === "true",
     requiresPerson: form.get("requiresPerson") === "true",
+    forFuelDispense: form.get("forFuelDispense") === "true",
   };
   const row = id
     ? await db.entryType.update({ where: { id }, data })
@@ -389,6 +394,7 @@ export async function saveEntryType(form: FormData) {
   await audit(user.userId, id ? "UPDATE" : "CREATE", "EntryType", row.id);
   revalidatePath("/tipos-lancamento");
   revalidatePath("/lancamentos");
+  revalidatePath("/combustivel/abastecimentos");
 }
 
 export async function deleteEntryType(form: FormData) {
@@ -435,9 +441,11 @@ export async function saveEntry(form: FormData) {
   const date = when(form, "date");
   if (id) {
     const existing = await db.accountingEntry.findUniqueOrThrow({
-      where: { id }, select: { workId: true, date: true, fuelPurchase: { select: { id: true } } },
+      where: { id }, select: { workId: true, date: true, fuelPurchase: { select: { id: true } }, fuelDispense: { select: { id: true } }, supplierLedgerEntry: { select: { id: true } } },
     });
     if (existing.fuelPurchase) throw new Error("Compras de combustível não podem ser alteradas pelo Centro de custos.");
+    if (existing.fuelDispense) throw new Error("Abastecimentos não podem ser alterados pelo Centro de custos.");
+    if (existing.supplierLedgerEntry) throw new Error("Pagamentos de fornecedores não podem ser alterados pelo Centro de custos.");
     await assertOpen(existing.workId, existing.date);
   }
   const entryTypeId = text(form, "entryTypeId");
@@ -722,23 +730,52 @@ export async function createSupplierPayment(form: FormData) {
 
 export async function createFuelDispense(form: FormData) {
   const user = await requirePermission("fuel.manage");
-  const tankId = text(form, "tankId"); const liters = decimal(form, "liters");
-  const [tank, purchases, dispenses] = await Promise.all([
+  const tankId = text(form, "tankId"); const liters = decimal(form, "liters"); const assetId = text(form, "assetId");
+  const workId = text(form, "workId"); const date = when(form, "date"); const meter = decimal(form, "meter");
+  const entryTypeId = text(form, "entryTypeId"); const personId = optional(form, "personId");
+  const competence = await assertOpen(workId, date);
+  const [tank, asset, entryType] = await Promise.all([
     db.fuelTank.findFirst({ where: { id: tankId, active: true }, select: { id: true, fuelTypeId: true } }),
-    db.fuelPurchase.aggregate({ where: { tankId }, _sum: { liters: true } }),
-    db.fuelDispense.aggregate({ where: { tankId }, _sum: { liters: true } }),
+    db.asset.findFirst({ where: { id: assetId, active: true }, select: { id: true, identifier: true, fuelTypeId: true, fuelTankCapacity: true, consumptionMetric: true } }),
+    db.entryType.findFirst({ where: { id: entryTypeId, active: true, forFuelDispense: true }, include: { defaultDebitAccount: true, defaultCreditAccount: true } }),
   ]);
   if (!tank) throw new Error("Selecione um tanque ativo.");
-  const asset = await db.asset.findFirst({ where: { id: text(form, "assetId"), active: true }, select: { fuelTypeId: true } });
   if (!asset || asset.fuelTypeId !== tank.fuelTypeId) throw new Error("O combustível do tanque não corresponde ao equipamento selecionado.");
-  const available = (purchases._sum.liters ?? new Prisma.Decimal(0)).minus(dispenses._sum.liters ?? 0);
-  if (liters.lte(0) || liters.gt(available)) throw new Error("Saldo de combustível insuficiente.");
-  const row = await db.fuelDispense.create({ data: {
-    date: when(form, "date"), liters, meter: text(form, "meter") ? decimal(form, "meter") : null,
-    notes: optional(form, "notes"), fuelTypeId: tank.fuelTypeId, tankId, assetId: text(form, "assetId"), workId: text(form, "workId"),
-    personId: optional(form, "personId"), createdById: user.userId,
-  }});
+  if (!asset.fuelTankCapacity || !asset.consumptionMetric) throw new Error("Configure a capacidade do tanque e o cálculo de consumo do equipamento.");
+  if (liters.lte(0) || liters.gt(asset.fuelTankCapacity)) throw new Error("A quantidade abastecida é inválida ou supera a capacidade do equipamento.");
+  if (meter.lt(0)) throw new Error("Horímetro/odômetro inválido.");
+  if (!entryType || !entryType.defaultDebitAccount.active || !entryType.defaultDebitAccount.analytic || !entryType.defaultCreditAccount.active || !entryType.defaultCreditAccount.analytic) throw new Error("Selecione um tipo de lançamento válido para abastecimento.");
+  if (entryType.requiresPerson && !personId) throw new Error("O tipo de lançamento exige operador ou motorista.");
+  const row = await db.$transaction(async (tx) => {
+    const [purchases, dispenses, previous] = await Promise.all([
+      tx.fuelPurchase.aggregate({ where: { tankId }, _sum: { liters: true, total: true } }),
+      tx.fuelDispense.aggregate({ where: { tankId }, _sum: { liters: true, totalCost: true } }),
+      tx.fuelDispense.findFirst({ where: { assetId, fullTank: true, meter: { not: null } }, orderBy: [{ date: "desc" }, { createdAt: "desc" }] }),
+    ]);
+    const available = (purchases._sum.liters ?? new Prisma.Decimal(0)).minus(dispenses._sum.liters ?? 0);
+    if (liters.gt(available)) throw new Error("Saldo de combustível insuficiente no tanque selecionado.");
+    if (previous && date < previous.date) throw new Error("A data não pode ser anterior ao último abastecimento completo do equipamento.");
+    const meterDelta = previous?.meter ? meter.minus(previous.meter) : null;
+    if (meterDelta && meterDelta.lte(0)) throw new Error("O medidor deve ser maior que o do abastecimento completo anterior.");
+    const consumptionRate = meterDelta ? (asset.consumptionMetric === "LITERS_PER_HOUR" ? liters.div(meterDelta) : meterDelta.div(liters)).toDecimalPlaces(3) : null;
+    const inventoryValue = (purchases._sum.total ?? new Prisma.Decimal(0)).minus(dispenses._sum.totalCost ?? 0);
+    const unitCost = available.gt(0) ? inventoryValue.div(available).toDecimalPlaces(4) : new Prisma.Decimal(0);
+    const totalCost = unitCost.mul(liters).toDecimalPlaces(2);
+    const entry = await tx.accountingEntry.create({ data: {
+      date, competence, history: `Abastecimento completo - ${asset.identifier}`, workId, assetId, personId,
+      entryTypeId, createdById: user.userId, lines: { create: [
+        { accountId: entryType.defaultDebitAccountId, debit: totalCost, credit: 0 },
+        { accountId: entryType.defaultCreditAccountId, debit: 0, credit: totalCost },
+      ] },
+    }});
+    return tx.fuelDispense.create({ data: {
+      date, liters, meter, fullTank: true, meterDelta, consumptionRate, unitCost, totalCost,
+      notes: optional(form, "notes"), fuelTypeId: tank.fuelTypeId, tankId, assetId, workId, personId,
+      entryId: entry.id, createdById: user.userId,
+    }});
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   await audit(user.userId, "CREATE", "FuelDispense", row.id); revalidatePath("/combustivel"); revalidatePath("/combustivel/abastecimentos"); revalidatePath("/combustivel/compras");
+  revalidatePath("/tanques-combustivel"); revalidatePath("/lancamentos");
 }
 
 export async function createProduct(form: FormData) {

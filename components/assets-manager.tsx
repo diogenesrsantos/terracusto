@@ -16,6 +16,8 @@ export type AssetListItem = {
   fuelTypeId: string | null;
   fuelTypeName: string | null;
   expectedUsage: string;
+  fuelTankCapacity: string;
+  consumptionMetric: "LITERS_PER_HOUR" | "KM_PER_LITER" | null;
   active: boolean;
 };
 
@@ -46,6 +48,8 @@ export function AssetsManager({ assets, fuels, equipmentTypes, page, totalPages,
         <label className="field">Marca<input name="brand" defaultValue={selected?.brand || ""} /></label>
         <label className="field">Modelo<input name="model" defaultValue={selected?.model || ""} /></label>
         <label className="field">Combustível<select name="fuelTypeId" defaultValue={selected?.fuelTypeId || ""}><option value="">Não se aplica</option>{fuels.map((fuel) => <option key={fuel.id} value={fuel.id} disabled={!fuel.active && fuel.id !== selected?.fuelTypeId}>{fuel.name}{fuel.active ? "" : " — inativo"}</option>)}</select></label>
+        <label className="field">Capacidade do tanque (L)<input name="fuelTankCapacity" type="number" min="0.001" step="0.001" defaultValue={selected?.fuelTankCapacity || ""} /></label>
+        <label className="field">Cálculo de consumo<select name="consumptionMetric" defaultValue={selected?.consumptionMetric || ""}><option value="">Não calcular</option><option value="LITERS_PER_HOUR">Litros por hora — máquinas</option><option value="KM_PER_LITER">Km por litro — veículos</option></select></label>
         <label className="field">Consumo esperado<input name="expectedUsage" type="number" step="0.001" defaultValue={selected?.expectedUsage || ""} /></label>
         <div className="form-actions">
           {selected && <button className="btn secondary" type="button" onClick={() => setSelected(null)}>Cancelar alteração</button>}
@@ -55,9 +59,9 @@ export function AssetsManager({ assets, fuels, equipmentTypes, page, totalPages,
     </section>
 
     <section className="card mt"><div className="list-head"><h2>Frota e ativos</h2><span className="muted">{totalAssets} {totalAssets === 1 ? "equipamento" : "equipamentos"}</span></div>
-      {assets.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Identificador</th><th>Tipo</th><th>Descrição</th><th>Marca/modelo</th><th>Combustível</th><th>Situação</th></tr></thead><tbody>
+      {assets.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Identificador</th><th>Tipo</th><th>Descrição</th><th>Marca/modelo</th><th>Combustível/tanque</th><th>Consumo</th><th>Situação</th></tr></thead><tbody>
         {assets.map((asset) => <tr key={asset.id} className={`selectable-row${selected?.id === asset.id ? " selected" : ""}`} onClick={() => setSelected(asset)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelected(asset); } }} role="button" tabIndex={0} aria-selected={selected?.id === asset.id}>
-          <td><strong>{asset.identifier}</strong></td><td>{asset.equipmentTypeName}</td><td>{asset.description}</td><td>{[asset.brand, asset.model].filter(Boolean).join(" ") || "—"}</td><td>{asset.fuelTypeName || "—"}</td><td><span className={`badge${asset.active ? "" : " warn"}`}>{asset.active ? "Ativo" : "Inativo"}</span></td>
+          <td><strong>{asset.identifier}</strong></td><td>{asset.equipmentTypeName}</td><td>{asset.description}</td><td>{[asset.brand, asset.model].filter(Boolean).join(" ") || "—"}</td><td>{asset.fuelTypeName || "—"}<br /><small>{asset.fuelTankCapacity ? `${asset.fuelTankCapacity} L` : "Capacidade não informada"}</small></td><td>{asset.consumptionMetric === "LITERS_PER_HOUR" ? "L/h" : asset.consumptionMetric === "KM_PER_LITER" ? "km/L" : "—"}</td><td><span className={`badge${asset.active ? "" : " warn"}`}>{asset.active ? "Ativo" : "Inativo"}</span></td>
         </tr>)}
       </tbody></table></div>}
       {totalPages > 1 && <nav className="pagination" aria-label="Paginação de equipamentos">

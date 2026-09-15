@@ -25,7 +25,8 @@ export default async function AssetsPage({ searchParams }: { searchParams: Promi
       id: asset.id, equipmentTypeId: asset.equipmentTypeId, equipmentTypeName: asset.equipmentType.name,
       identifier: asset.identifier, description: asset.description, brand: asset.brand, model: asset.model,
       fuelTypeId: asset.fuelTypeId, fuelTypeName: asset.fuelType?.name || null,
-      expectedUsage: asset.expectedUsage?.toString() || "", active: asset.active,
+      expectedUsage: asset.expectedUsage?.toString() || "", fuelTankCapacity: asset.fuelTankCapacity?.toString() || "",
+      consumptionMetric: asset.consumptionMetric, active: asset.active,
     }))} fuels={fuels.map(({ id, name, active }) => ({ id, name, active }))} equipmentTypes={equipmentTypes.map(({ id, name, active }) => ({ id, name, active }))} page={page} totalPages={totalPages} totalAssets={totalAssets} />
   </>;
 }

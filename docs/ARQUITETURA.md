@@ -85,6 +85,12 @@ O schema possui 31 modelos, agrupados assim:
 - Combustível: `FuelType`, `FuelPurchase` e `FuelDispense`.
 - Reservatórios e fornecedores: `FuelTank` individualiza capacidade e saldo;
   `SupplierLedgerEntry` mantém débitos e créditos da conta corrente de postos.
+
+Cada `Asset` abastecível informa `fuelTankCapacity` e `consumptionMetric`. Um
+novo `FuelDispense` representa o tanque do equipamento completado, guarda a
+diferença do horímetro/odômetro, a média calculada, custo médio unitário e custo
+total. A baixa física e o `AccountingEntry` balanceado são criados na mesma
+transação serializável.
 - Estoque: `Product` e `StockMovement`.
 - Manutenção: `MaintenanceOrder` e `MaintenancePart`.
 

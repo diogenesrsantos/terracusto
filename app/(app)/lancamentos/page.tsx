@@ -45,7 +45,7 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
   const page = Math.min(requestedPage, totalPages);
   const entries = selectedWorkId ? await db.accountingEntry.findMany({
     where: entryWhere,
-    include: { person: true, asset: true, entryType: true, lines: { include: { account: true } } },
+    include: { person: true, asset: true, entryType: true, fuelPurchase: true, fuelDispense: true, supplierLedgerEntry: true, lines: { include: { account: true } } },
     orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     skip: (page - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
@@ -74,6 +74,7 @@ export default async function EntriesPage({ searchParams }: { searchParams: Prom
       secondStartTime: timeInput(entry.secondStartAt),
       secondEndTime: timeInput(entry.secondEndAt),
       hours: entry.hours ? number(entry.hours) : "",
+      generated: Boolean(entry.fuelPurchase || entry.fuelDispense || entry.supplierLedgerEntry),
     };
   });
 

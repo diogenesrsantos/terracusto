@@ -1,5 +1,16 @@
 # Estado atual
 
+Em 15/09/2026, a segunda etapa da evolução de combustível passou a exigir nos
+equipamentos a capacidade do tanque e o método de consumo: litros por hora para
+máquinas ou quilômetros por litro para veículos. Cada abastecimento representa
+tanque cheio, valida a capacidade e a leitura crescente do medidor, calcula a
+média desde o abastecimento completo anterior e valora a saída pelo custo médio
+do reservatório. A saída cria um lançamento contábil no Centro de custos usando
+um tipo de lançamento marcado para abastecimentos. A migration
+`20260915180000_add_fuel_consumption_and_accounting` preserva saídas antigas
+como referências não completas e cria o tipo inicial “Consumo de combustível
+da frota”.
+
 Em 15/09/2026, a primeira etapa da evolução de combustível passou a controlar
 reservatórios fixos e móveis, capacidade, combustível e saldo individual. As
 compras são vinculadas ao tanque e identificam pagamento à vista ou a prazo;
