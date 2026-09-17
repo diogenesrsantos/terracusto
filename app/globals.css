@@ -166,6 +166,20 @@ tbody tr:hover { background: #f8faf8; }
 .fuel-report-group td:nth-child(1), .fuel-report-group td:nth-child(2), .fuel-report-group td:nth-child(3), .fuel-report-group td:nth-child(4), .fuel-report-group td:nth-child(6), .fuel-report-group td:nth-child(7), .fuel-report-group td:nth-child(8) { white-space: nowrap; }
 .fuel-col-date { width: 8%; } .fuel-col-coupon { width: 11%; } .fuel-col-liters { width: 8%; } .fuel-col-plate { width: 9%; } .fuel-col-asset { width: 17%; } .fuel-col-meter { width: 11%; } .fuel-col-value { width: 10%; } .fuel-col-person { width: 26%; }
 .fuel-report-total { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; padding: .8rem 1rem; border: 2px solid var(--ink); font-size: 1rem; }
+.fuel-supplier-group { margin-top: 1rem; break-before: auto; }
+.fuel-supplier-group > h2 { margin: 0; padding: .45rem .6rem; color: white; background: var(--brand); font-size: .92rem; }
+.fuel-asset-group { margin-top: .55rem; break-inside: avoid; border: 1px solid var(--line); }
+.fuel-asset-group h3 { margin: 0; padding: .35rem .5rem; background: #edf4f0; font-size: .84rem; }
+.fuel-asset-group h3 small { color: var(--muted); font-weight: 500; }
+.fuel-asset-group .table-wrap { border: 0; border-radius: 0; }
+.fuel-asset-group table { table-layout: fixed; font-size: .78rem; }
+.fuel-asset-group th, .fuel-asset-group td { padding: .25rem .35rem; line-height: 1.08; }
+.fuel-asset-group th { font-size: .65rem; letter-spacing: .02em; white-space: nowrap; }
+.fuel-asset-group td:not(:last-child) { white-space: nowrap; }
+.fuel-cost-date { width: 11%; } .fuel-cost-coupon { width: 13%; } .fuel-cost-liters { width: 11%; } .fuel-cost-value { width: 13%; } .fuel-cost-meter { width: 12%; } .fuel-cost-person { width: 40%; }
+.fuel-supplier-total, .fuel-grand-total { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1.5rem; align-items: center; }
+.fuel-supplier-total { padding: .4rem .55rem; border: 1px solid var(--ink); border-top: 0; font-size: .82rem; font-weight: 750; }
+.fuel-grand-total { margin-top: 1rem; padding: .55rem .65rem; border: 2px solid var(--ink); font-size: .92rem; }
 .report-note { margin: 1rem 0 0; color: var(--muted); font-size: .82rem; }
 .report-sheet tfoot { border-top: 2px solid var(--ink); }
 .report-sheet tfoot th { color: var(--ink); }
@@ -214,6 +228,15 @@ tbody tr:hover { background: #f8faf8; }
   .report-sheet .table-wrap { overflow: visible; }
   .report-sheet table { font-size: 9pt; }
   .fuel-report-group table { font-size: 8pt; }
+  .fuel-cost-report .report-header { gap: 3mm; padding-bottom: 2mm; }
+  .fuel-cost-report .report-meta { margin: 2mm 0 3mm; padding: 2mm; line-height: 1.2; }
+  .fuel-cost-report .fuel-supplier-group { margin-top: 3mm; }
+  .fuel-cost-report .fuel-asset-group { margin-top: 1.5mm; }
+  .fuel-cost-report .fuel-asset-group table { font-size: 7.5pt; }
+  .fuel-cost-report .fuel-asset-group th, .fuel-cost-report .fuel-asset-group td { padding: 1mm 1.2mm; line-height: 1.05; }
+  .fuel-cost-report .fuel-supplier-total { padding: 1.2mm; }
+  .fuel-cost-report .fuel-grand-total { margin-top: 3mm; padding: 1.5mm; }
+  .fuel-cost-report .report-footer { margin-top: 3mm; }
   .report-sheet tr { break-inside: avoid; }
 }
 @media print {
