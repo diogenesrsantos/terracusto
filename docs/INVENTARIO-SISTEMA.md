@@ -47,6 +47,8 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura mediante senha e justificativa |
 | `/combustivel/compras` | Compras de combustível | `fuel.manage` | Entradas por tanque, compras à vista/a prazo, conta corrente e pagamentos |
 | `/combustivel/abastecimentos` | Abastecimentos | `fuel.manage` | Tanque cheio, saída contabilizada e média `km/L` ou `L/h` |
+| `/combustivel/medicoes` | Medições de combustível | `fuel.manage` | Consolidação mensal de abastecimentos reembolsáveis por obra |
+| `/relatorios/fornecedores` | Relatório de fornecedores | `fuel.manage` | Dívida consolidada e títulos detalhados por empresa |
 | `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas, ajustes positivos, saldos e alerta de reposição |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens preventivas/corretivas |
 | `/perfil` | Minha senha | usuário autenticado | Alteração da própria senha |
@@ -265,7 +267,7 @@ em `SystemSettings`.
 
 ## Modelo de dados
 
-O schema possui 33 modelos:
+O schema possui 35 modelos:
 
 | Grupo | Modelo | Responsabilidade e vínculos principais |
 | --- | --- | --- |
@@ -298,6 +300,8 @@ O schema possui 33 modelos:
 | Combustível | `FuelPurchase` | Entrada no tanque e vínculo individual com lançamento contábil |
 | Combustível | `FuelDispense` | Saída, medidor, média, custo e lançamento para equipamento/obra |
 | Combustível | `SupplierLedgerEntry` | Conta corrente de compras a prazo e pagamentos por fornecedor |
+| Combustível | `SupplierPaymentAllocation` | Distribuição FIFO de pagamentos entre títulos do fornecedor |
+| Combustível | `FuelMeasurement` | Consolidação mensal dos abastecimentos reembolsáveis por obra/cliente |
 | Estoque | `Product` | Item, unidade e estoque mínimo |
 | Estoque | `StockMovement` | Entrada, saída ou ajuste, com obra opcional |
 | Manutenção | `MaintenanceOrder` | Ordem numerada, equipamento, estado, serviços e custos |
@@ -305,7 +309,8 @@ O schema possui 33 modelos:
 
 Enums persistidos: `PersonType`, `EntryStatus`, `AccountNature`,
 `StockMovementKind`, `MaintenanceKind`, `MaintenanceStatus`, `PeriodStatus`,
-`FuelTankKind`, `FuelPaymentTerm` e `ConsumptionMetric`.
+`FuelTankKind`, `FuelPaymentTerm`, `ConsumptionMetric`, `FuelSupplySource` e
+`FuelMeasurementStatus`.
 Valores monetários e quantitativos usam `Decimal`; identificadores internos usam
 `cuid`, exceto códigos/números autoincrementáveis de obra e ordem.
 
@@ -323,7 +328,7 @@ Valores monetários e quantitativos usam `Decimal`; identificadores internos usa
 | `accounting.manage` | `saveAccount`, `saveEntryType`, `deleteEntryType` e `saveEntry` |
 | `closing.close` | `closePeriod` |
 | `closing.reopen` | `reopenPeriod` |
-| `fuel.manage` | `saveFuelType`, `deleteFuelType`, `saveFuelTank`, `deleteFuelTank`, `createFuelPurchase`, `createSupplierPayment` e `createFuelDispense` |
+| `fuel.manage` | `saveFuelType`, `deleteFuelType`, `saveFuelTank`, `deleteFuelTank`, `createFuelPurchase`, `createSupplierPayment`, `createFuelDispense` e ações de medição |
 | `stock.manage` | `createProduct` e `createStockMovement` |
 | `maintenance.manage` | `createMaintenance` e `finishMaintenance` |
 
@@ -369,8 +374,10 @@ O seed cria/atualiza:
 | `20260828183000_add_entry_type_references` | Adiciona ao tipo de lançamento os indicadores de equipamento e operador/motorista e configura Serviço de máquinas com ambos |
 | `20260915150000_add_fuel_tanks_and_supplier_ledger` | Individualiza tanques, vincula movimentações e cria conta corrente de fornecedores |
 | `20260915180000_add_fuel_consumption_and_accounting` | Adiciona capacidade/método, média de consumo, custo médio e contabilização das saídas |
+| `20260916120000_add_direct_fuel_payables_and_measurements` | Adiciona abastecimento direto, baixa FIFO, medições e relatório de fornecedores |
 
-Produção possui 16 migrations aplicadas.
+Produção possui 17 migrations aplicadas e o código correspondente à 17ª foi
+publicado em 16/09/2026.
 Nunca usar `prisma db push` em produção; mudanças de schema devem usar migration
 revisada e backup prévio.
 

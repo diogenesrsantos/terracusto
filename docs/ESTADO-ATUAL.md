@@ -1,5 +1,36 @@
 # Estado atual
 
+Em 16/09/2026 foi implementada e publicada a
+evolução de abastecimentos e medições. Abastecimentos podem vir de tanque
+interno ou diretamente de fornecedor; compras a prazo geram títulos e
+pagamentos são alocados automaticamente por vencimento. Custos reembolsáveis
+ficam pendentes até o fechamento da medição mensal, quando é criado o lançamento
+`Clientes × Reembolso de combustíveis`. Foram adicionados o relatório de
+fornecedores e a migration
+`20260916120000_add_direct_fuel_payables_and_measurements`. Typecheck, validação
+do schema e build local com 30 rotas foram aprovados.
+
+A migration foi aplicada antecipadamente na VPS em 16/09/2026, após o backup
+`terracusto-20260916-180236.dump` (720.952 bytes), validado com `pg_restore
+--list`. O banco passou a registrar 17 migrations sem pendências; as tabelas
+`FuelMeasurement` e `SupplierPaymentAllocation` e a conta `3.2.2 — Reembolso de
+combustíveis` foram confirmadas. O serviço permaneceu ativo, o health check
+retornou aplicação e banco `ok`, o domínio público respondeu HTTP 307 para
+`/login` e o timer de backup permaneceu ativo. O schema é compatível com a
+versão anterior.
+
+O código foi publicado em 16/09/2026 pelo artefato local de SHA-256
+`6a0670de95fdf3d2f460b71bafbeade2e71bbb6c3b2f58d67ad1b38c2aefeb7b`.
+Na VPS, `npm ci` não encontrou vulnerabilidades, o build gerou 30 rotas e a
+release foi validada isoladamente na porta 3121 antes da troca atômica. A versão
+anterior foi preservada em
+`/var/www/terracusto-previous-20260916-1834`. Depois da troca, o serviço ficou
+ativo, o health check retornou aplicação e banco `ok`, as novas rotas
+redirecionaram usuários sem sessão para `/login`, o Nginx permaneceu válido e o
+timer de backup ativo. O smoke autenticado não foi concluído porque a senha
+atual do administrador não corresponde mais a `ADMIN_PASSWORD`, limitação já
+conhecida; nenhuma credencial foi alterada.
+
 Em 15/09/2026, a segunda etapa da evolução de combustível passou a exigir nos
 equipamentos a capacidade do tanque e o método de consumo: litros por hora para
 máquinas ou quilômetros por litro para veículos. Cada abastecimento representa

@@ -93,10 +93,19 @@ mudança do dia ao exibir no fuso brasileiro. Competências usam o primeiro dia 
 mês em UTC.
 
 `FuelTank` individualiza capacidade e saldo por reservatório.
-`SupplierLedgerEntry` mantém débitos e créditos da conta corrente dos postos.
+`SupplierLedgerEntry` mantém débitos e créditos da conta corrente dos postos;
+`SupplierPaymentAllocation` distribui cada pagamento pelos títulos mais antigos.
 Cada `Asset` abastecível informa capacidade e método de consumo. Um
 `FuelDispense` representa tanque cheio, armazena diferença do medidor, média,
-custo unitário e total; a baixa física e o lançamento balanceado são atômicos.
+custo unitário e total. A origem pode ser tanque interno, com baixa física, ou
+fornecedor direto, com preço da nota e eventual título a pagar. A sequência de
+consumo é única por equipamento.
+
+`FuelMeasurement` agrupa por obra e competência os abastecimentos marcados para
+reembolso. O rascunho pode incorporar novos itens e excluir custos não
+reembolsáveis; o fechamento cria atomicamente o lançamento Clientes contra
+Reembolso de combustíveis. Compras de estoque e pagamentos usam lançamentos sem
+obra, enquanto custos e medições permanecem vinculados ao centro de custo.
 
 `AccountingEntry` armazena o primeiro período em `startAt`/`endAt` e, quando
 necessário, um segundo período anulável em `secondStartAt`/`secondEndAt`. A ação

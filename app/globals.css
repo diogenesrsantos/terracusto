@@ -110,6 +110,8 @@ tbody tr:hover { background: #f8faf8; }
 .badge.warn { color: #7a5100; background: #fff0c9; } .badge.danger { color: #842d29; background: #f9dfdd; }
 .empty { padding: 2rem; text-align: center; color: var(--muted); }
 .error { color: var(--danger); background: #fbe9e8; border-radius: 8px; padding: .75rem; }
+.success { color: #17683a; background: #e6f5eb; border-radius: 8px; padding: .75rem; }
+.field-error { display: block; margin-top: .35rem; color: var(--danger); font-size: .78rem; font-weight: 650; }
 .muted { color: var(--muted); } .text-right { text-align: right; } .mt { margin-top: 1rem; }
 .list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
 .entry-filter-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin: 1rem 0; padding: .85rem; border: 1px solid var(--line); border-radius: 8px; background: #f7f9f7; }
@@ -151,6 +153,19 @@ tbody tr:hover { background: #f8faf8; }
 .account-report-group { margin-top: 1.5rem; break-inside: avoid; }
 .account-report-group h3 { margin: 0 0 .55rem; font-size: .98rem; }
 .account-report-group h3 small { color: var(--muted); font-weight: 500; }
+.equipment-report-group { margin-top: 1.5rem; break-inside: avoid; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.equipment-report-group h3 { margin: 0; padding: .75rem 1rem; color: white; background: var(--brand); font-size: .98rem; }
+.equipment-report-group .table-wrap { border: 0; border-radius: 0; }
+.equipment-report-total { margin-top: 1.5rem; padding: .8rem 1rem; border: 2px solid var(--ink); font-size: 1rem; }
+.fuel-report-group { margin-top: 1.5rem; break-inside: avoid; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.fuel-report-group h3 { margin: 0; padding: .55rem .7rem; color: white; background: var(--brand); font-size: .94rem; }
+.fuel-report-group .table-wrap { border: 0; border-radius: 0; }
+.fuel-report-group table { table-layout: fixed; font-size: .82rem; }
+.fuel-report-group th { padding: .42rem .35rem; font-size: .67rem; letter-spacing: .02em; line-height: 1.1; white-space: nowrap; }
+.fuel-report-group td { padding: .38rem .35rem; line-height: 1.15; vertical-align: middle; }
+.fuel-report-group td:nth-child(1), .fuel-report-group td:nth-child(2), .fuel-report-group td:nth-child(3), .fuel-report-group td:nth-child(4), .fuel-report-group td:nth-child(6), .fuel-report-group td:nth-child(7), .fuel-report-group td:nth-child(8) { white-space: nowrap; }
+.fuel-col-date { width: 8%; } .fuel-col-coupon { width: 11%; } .fuel-col-liters { width: 8%; } .fuel-col-plate { width: 9%; } .fuel-col-asset { width: 17%; } .fuel-col-meter { width: 11%; } .fuel-col-value { width: 10%; } .fuel-col-person { width: 26%; }
+.fuel-report-total { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; padding: .8rem 1rem; border: 2px solid var(--ink); font-size: 1rem; }
 .report-note { margin: 1rem 0 0; color: var(--muted); font-size: .82rem; }
 .report-sheet tfoot { border-top: 2px solid var(--ink); }
 .report-sheet tfoot th { color: var(--ink); }
@@ -185,8 +200,12 @@ tbody tr:hover { background: #f8faf8; }
 .help-step-image-list img { width: 150px; height: 95px; display: block; object-fit: cover; border: 1px solid var(--line); border-radius: 7px; }
 .help-step-image-list figcaption { display: grid; gap: .15rem; margin-top: .25rem; color: var(--muted); font-size: .72rem; overflow-wrap: anywhere; }
 .danger-text { color: var(--danger); }
+.measurement-list { display: grid; gap: 1rem; }
+.measurement-card { display: grid; gap: .8rem; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
+.measurement-card p { margin: 0; }
+.measurement-actions { margin-top: .2rem; }
 @media print {
-  @page { margin: 12mm; }
+  @page { margin: 5mm; }
   body { background: white; }
   .no-print, .sidebar { display: none !important; }
   .app-shell { display: block; }
@@ -194,6 +213,7 @@ tbody tr:hover { background: #f8faf8; }
   .report-sheet { margin: 0; padding: 0; border: 0; box-shadow: none; }
   .report-sheet .table-wrap { overflow: visible; }
   .report-sheet table { font-size: 9pt; }
+  .fuel-report-group table { font-size: 8pt; }
   .report-sheet tr { break-inside: avoid; }
 }
 @media print {

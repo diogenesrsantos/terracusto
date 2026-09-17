@@ -37,6 +37,8 @@ export type CostCenterEntryItem = {
   assetLabel: string;
   personId: string;
   personName: string;
+  meterStart: string;
+  meterEnd: string;
   startTime: string;
   endTime: string;
   secondStartTime: string;
@@ -83,6 +85,8 @@ export function CostCenterEntryForm({
   const [amount, setAmount] = useState("");
   const [assetId, setAssetId] = useState("");
   const [personId, setPersonId] = useState("");
+  const [meterStart, setMeterStart] = useState("");
+  const [meterEnd, setMeterEnd] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [secondStartTime, setSecondStartTime] = useState("");
@@ -147,6 +151,8 @@ export function CostCenterEntryForm({
     setEndTime("");
     setSecondStartTime("");
     setSecondEndTime("");
+    setMeterStart("");
+    setMeterEnd("");
     if (value) {
       window.localStorage.setItem("terracusto.defaultWorkId", value);
       router.push(`/lancamentos?workId=${encodeURIComponent(value)}&page=1`);
@@ -168,6 +174,8 @@ export function CostCenterEntryForm({
       setEndTime("");
       setSecondStartTime("");
       setSecondEndTime("");
+      setMeterStart("");
+      setMeterEnd("");
     }
   }
 
@@ -182,6 +190,8 @@ export function CostCenterEntryForm({
     setAmount(entry.amount);
     setAssetId(entry.assetId);
     setPersonId(entry.personId);
+    setMeterStart(entry.meterStart);
+    setMeterEnd(entry.meterEnd);
     setStartTime(entry.startTime);
     setEndTime(entry.endTime);
     setSecondStartTime(entry.secondStartTime);
@@ -211,6 +221,8 @@ export function CostCenterEntryForm({
       setEndTime("");
       setSecondStartTime("");
       setSecondEndTime("");
+      setMeterStart("");
+      setMeterEnd("");
       setFormVersion((version) => version + 1);
     }, 0);
   }
@@ -222,6 +234,8 @@ export function CostCenterEntryForm({
     setEndTime("");
     setSecondStartTime("");
     setSecondEndTime("");
+    setMeterStart("");
+    setMeterEnd("");
   }
 
   function listingHref(targetPage: number) {
@@ -265,6 +279,8 @@ export function CostCenterEntryForm({
         <label className="field">Hora final<input name="endTime" type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} /></label>
         <label className="field"><span className="nowrap-label">Segundo início - opc.</span><input name="secondStartTime" type="time" value={secondStartTime} onChange={(event) => setSecondStartTime(event.target.value)} /></label>
         <label className="field"><span className="nowrap-label">Segundo final - opc.</span><input name="secondEndTime" type="time" value={secondEndTime} onChange={(event) => setSecondEndTime(event.target.value)} /></label>
+        <label className="field">Horímetro inicial<input name="meterStart" type="number" min="0" step="0.01" value={meterStart} onChange={(event) => setMeterStart(event.target.value)} /></label>
+        <label className="field">Horímetro final<input name="meterEnd" type="number" min="0" step="0.01" value={meterEnd} onChange={(event) => setMeterEnd(event.target.value)} /></label>
         <label className="field">Total de horas<output className="elapsed-total" aria-live="polite">{elapsedMinutes !== null ? <>{Math.floor(elapsedMinutes / 60)}h{elapsedMinutes % 60 ? ` ${elapsedMinutes % 60}min` : ""}</> : "—"}</output></label>
       </div>
     </fieldset>}

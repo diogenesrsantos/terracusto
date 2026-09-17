@@ -22,10 +22,13 @@ const groups = [
     ["accounting.manage", "/plano-contas", "Plano de contas"], ["accounting.manage", "/tipos-lancamento", "Tipos de lançamento"],
     ["accounting.manage", "/lancamentos", "Centro de custos"],
     ["accounting.manage", "/relatorios/centro-custos", "Relatório de centro de custo"],
+    ["fuel.manage", "/relatorios/fornecedores", "Relatório de fornecedores"],
+    ["fuel.manage", "/relatorios/abastecimentos", "Relatório de abastecimentos"],
     ["closing.close", "/fechamentos", "Fechamentos"],
   ] },
   { label: "Operacional", items: [
     ["fuel.manage", "/combustivel/compras", "Compras"], ["fuel.manage", "/combustivel/abastecimentos", "Abastecimentos"],
+    ["fuel.manage", "/combustivel/medicoes", "Medições de combustível"],
     ["stock.manage", "/almoxarifado", "Almoxarifado"],
     ["maintenance.manage", "/manutencao", "Manutenção"],
   ] },

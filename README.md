@@ -20,6 +20,11 @@ O estado de produção acima foi validado em 15/09/2026, com 16 migrations
 aplicadas, 28 rotas geradas e health check de aplicação/banco `ok`. Consulte
 [docs/ESTADO-ATUAL.md](docs/ESTADO-ATUAL.md) antes de uma nova alteração.
 
+Em 16/09/2026 foi publicada a evolução de abastecimentos diretos em postos,
+baixa FIFO de fornecedores, medições mensais de combustível e relatórios de
+contas a pagar. A especificação está em
+[docs/ESPECIFICACAO-COMBUSTIVEL-MEDICOES.md](docs/ESPECIFICACAO-COMBUSTIVEL-MEDICOES.md).
+
 ## Desenvolvimento local
 
 Requisitos: Node.js compatível com Next.js 16, npm e PostgreSQL.

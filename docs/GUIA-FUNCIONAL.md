@@ -22,6 +22,9 @@
 | `/fechamentos` | Reabertura | `closing.reopen` | Reabertura com senha e justificativa |
 | `/combustivel/compras` | Compras de combustível | `fuel.manage` | Entradas por tanque, pagamento, contabilização e fornecedores |
 | `/combustivel/abastecimentos` | Abastecimentos | `fuel.manage` | Saída, contabilização e média de consumo por equipamento |
+| `/combustivel/medicoes` | Medições de combustível | `fuel.manage` | Consolidação mensal dos custos reembolsáveis por obra |
+| `/relatorios/fornecedores` | Relatório de fornecedores | `fuel.manage` | Resumo geral e títulos detalhados por fornecedor |
+| `/relatorios/abastecimentos` | Relatório de abastecimentos | `fuel.manage` | Abastecimentos diretos em posto, por competência, fornecedor e combustível |
 | `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas e ajustes positivos |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens de serviço |
 | `/perfil` | Minha conta | Usuário autenticado | Troca de senha |
@@ -226,6 +229,14 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 - A saída usa o custo médio do estoque do tanque e cria, na mesma transação, um
   lançamento balanceado no centro de custos. As contas vêm de um tipo de
   lançamento marcado como disponível para abastecimentos.
+- Abastecimentos diretos registram fornecedor, documento, preço, pagamento e
+  vencimento sem movimentar um tanque interno. O custo usa o preço real da nota.
+- Compras a prazo e abastecimentos diretos a prazo geram títulos. Pagamentos
+  completos ou parciais são alocados automaticamente nos títulos mais antigos,
+  priorizando o vencimento.
+- Abastecimentos reembolsáveis ficam pendentes de medição. O fechamento mensal
+  por obra consolida o custo real e lança Clientes contra Reembolso de
+  combustíveis.
 
 ### Almoxarifado
 

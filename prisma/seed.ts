@@ -32,6 +32,7 @@ const accounts = [
   ["3.1.1", "Serviços de máquinas", AccountNature.CREDIT, true],
   ["3.2", "Despesas reembolsáveis", AccountNature.CREDIT, false],
   ["3.2.1", "Reembolso de alimentação", AccountNature.CREDIT, true],
+  ["3.2.2", "Reembolso de combustíveis", AccountNature.CREDIT, true],
   ["4", "Custos e despesas", AccountNature.DEBIT, false],
   ["4.1", "Combustíveis", AccountNature.DEBIT, true],
   ["4.2", "Manutenção", AccountNature.DEBIT, true],
@@ -96,6 +97,7 @@ async function main() {
     ["Reembolso de alimentação", "1.2", "3.2.1", false, false, false],
     ["Alimentação paga", "4.5", "1.1", false, false, false],
     ["Consumo de combustível da frota", "4.1", "1.3", true, false, true],
+    ["Reembolso de combustíveis", "1.2", "3.2.2", false, false, false],
   ] as const;
   for (const [name, debitCode, creditCode, requiresAsset, requiresPerson, forFuelDispense] of entryTypes) {
     const [debit, credit] = await Promise.all([

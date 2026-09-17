@@ -12,6 +12,11 @@ export const HELP_PAGES = [
   { key: "/relatorios/centro-custos", label: "Relatório de centro de custo" },
   { key: "/fechamentos", label: "Fechamentos" },
   { key: "/combustivel", label: "Combustível" },
+  { key: "/combustivel/compras", label: "Compras de combustível" },
+  { key: "/combustivel/abastecimentos", label: "Abastecimentos" },
+  { key: "/combustivel/medicoes", label: "Medições de combustível" },
+  { key: "/relatorios/fornecedores", label: "Relatório de fornecedores" },
+  { key: "/relatorios/abastecimentos", label: "Relatório de abastecimentos" },
   { key: "/almoxarifado", label: "Almoxarifado" },
   { key: "/manutencao", label: "Manutenção" },
 ] as const;

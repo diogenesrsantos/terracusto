@@ -22,7 +22,7 @@ export default async function Dashboard() {
       <div className="card metric"><span>Manutenções abertas</span><strong>{openMaintenance}</strong></div>
     </section>
     <section className="card mt"><h2>Últimos lançamentos</h2><div className="table-wrap"><table><thead><tr><th>Data</th><th>Obra</th><th>Histórico</th><th className="text-right">Valor</th></tr></thead>
-      <tbody>{recent.map((entry) => <tr key={entry.id}><td>{entry.date.toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td>{entry.work.code}</td><td>{entry.history}</td><td className="text-right">{money(entry.lines.reduce((sum, line) => sum + Number(line.debit), 0))}</td></tr>)}</tbody>
+      <tbody>{recent.map((entry) => <tr key={entry.id}><td>{entry.date.toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td>{entry.work?.code || "Financeiro"}</td><td>{entry.history}</td><td className="text-right">{money(entry.lines.reduce((sum, line) => sum + Number(line.debit), 0))}</td></tr>)}</tbody>
     </table></div></section>
   </>;
 }
