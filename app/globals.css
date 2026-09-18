@@ -176,7 +176,7 @@ tbody tr:hover { background: #f8faf8; }
 .fuel-asset-group th, .fuel-asset-group td { padding: .25rem .35rem; line-height: 1.08; }
 .fuel-asset-group th { font-size: .65rem; letter-spacing: .02em; white-space: nowrap; }
 .fuel-asset-group td:not(:last-child) { white-space: nowrap; }
-.fuel-cost-date { width: 11%; } .fuel-cost-coupon { width: 13%; } .fuel-cost-liters { width: 11%; } .fuel-cost-value { width: 13%; } .fuel-cost-meter { width: 12%; } .fuel-cost-person { width: 40%; }
+.fuel-cost-date { width: 11%; } .fuel-cost-coupon { width: 12%; } .fuel-cost-liters { width: 10%; } .fuel-cost-value { width: 12%; } .fuel-cost-meter { width: 11%; } .fuel-cost-consumption { width: 12%; } .fuel-cost-person { width: 32%; }
 .fuel-supplier-total, .fuel-grand-total { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 1.5rem; align-items: center; }
 .fuel-supplier-total { padding: .4rem .55rem; border: 1px solid var(--ink); border-top: 0; font-size: .82rem; font-weight: 750; }
 .fuel-grand-total { margin-top: 1rem; padding: .55rem .65rem; border: 2px solid var(--ink); font-size: .92rem; }
