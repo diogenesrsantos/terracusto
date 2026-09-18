@@ -219,11 +219,21 @@ tbody tr:hover { background: #f8faf8; }
 .measurement-card p { margin: 0; }
 .measurement-actions { margin-top: .2rem; }
 .action-link { cursor: pointer; color: var(--brand); font-weight: 750; white-space: nowrap; }
-.compact-edit-form, .compact-delete-form { display: grid; gap: .45rem; min-width: 280px; margin-top: .6rem; padding: .65rem; border: 1px solid var(--line); border-radius: 8px; background: white; }
-.compact-edit-form label { display: grid; gap: .2rem; font-size: .72rem; font-weight: 700; }
-.compact-edit-form input, .compact-edit-form select { min-width: 0; padding: .42rem; }
-.compact-delete-form { border-color: #e8b7b4; background: #fff8f7; font-size: .75rem; }
-.compact-delete-form label { display: flex; align-items: center; gap: .35rem; }
+.button-link { padding: 0; border: 0; background: transparent; font: inherit; }
+.editor-overlay { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 1rem; background: rgba(13, 25, 22, .58); }
+.editor-dialog { width: min(100%, 760px); max-height: 92vh; overflow: hidden; border-radius: 14px; background: var(--card); box-shadow: 0 24px 70px rgba(0, 0, 0, .32); }
+.editor-dialog-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 1rem 1.2rem; color: white; background: var(--brand); }
+.editor-dialog-head span { font-size: .74rem; font-weight: 700; opacity: .82; }
+.editor-dialog-head h2 { margin: .15rem 0 0; font-size: 1.2rem; }
+.editor-close { width: 34px; height: 34px; border: 0; border-radius: 50%; color: white; background: rgba(255,255,255,.18); font-size: 1.4rem; line-height: 1; }
+.editor-dialog-body { max-height: calc(92vh - 72px); overflow: auto; padding: 1.1rem; }
+.editor-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.editor-form label { display: grid; gap: .3rem; color: #3e504a; font-size: .8rem; font-weight: 700; }
+.editor-form input, .editor-form select { width: 100%; min-width: 0; padding: .65rem; }
+.editor-wide { grid-column: 1 / -1; }
+.editor-actions { display: flex; justify-content: flex-end; gap: .6rem; }
+.editor-danger-zone { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1.2rem; padding: .85rem; border: 1px solid #e8b7b4; border-radius: 9px; background: #fff8f7; }
+.editor-danger-zone p { margin: .2rem 0 0; color: var(--muted); font-size: .78rem; }
 .danger-btn { background: var(--danger); }
 @media print {
   @page { margin: 5mm; }
@@ -261,6 +271,9 @@ tbody tr:hover { background: #f8faf8; }
   .dashboard-company-card { width: 100%; max-width: none; }
   .entry-row-2, .entry-row-work, .entry-row-hours, .entry-row-history, .entry-row-accounts { grid-template-columns: 1fr; }
   .entry-filter-form { grid-template-columns: 1fr; }
+  .editor-form { grid-template-columns: 1fr; }
+  .editor-wide { grid-column: 1; }
+  .editor-danger-zone { align-items: stretch; flex-direction: column; }
   table { min-width: 680px; }
   .account-tree-toolbar { align-items: flex-start; flex-direction: column; }
   .account-tree-head { display: none; }
