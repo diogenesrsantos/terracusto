@@ -324,6 +324,7 @@ model EntryType {
 
 model AccountingEntry {
   id                  String               @id @default(cuid())
+  operationId         String?
   date                DateTime
   competence          DateTime
   history             String
@@ -356,10 +357,12 @@ model AccountingEntry {
   @@index([workId, competence, status])
   @@index([entryTypeId])
   @@index([date])
+  @@index([operationId])
 }
 
 model AccountingLine {
   id        String          @id @default(cuid())
+  operationId String?
   entryId   String
   accountId String
   debit     Decimal         @default(0) @db.Decimal(14, 2)
@@ -368,6 +371,7 @@ model AccountingLine {
   account   Account         @relation(fields: [accountId], references: [id])
 
   @@index([accountId])
+  @@index([operationId])
 }
 
 model MonthlyClosing {
@@ -459,6 +463,7 @@ model FuelPurchase {
 
 model FuelDispense {
   id                  String               @id @default(cuid())
+  operationId         String               @unique @default(cuid())
   date                DateTime
   liters              Decimal              @db.Decimal(14, 3)
   meter               Decimal?             @db.Decimal(14, 2)
@@ -503,6 +508,7 @@ model FuelDispense {
 
 model SupplierLedgerEntry {
   id                 String                      @id @default(cuid())
+  operationId        String?
   date               DateTime
   description        String
   document           String?
@@ -523,6 +529,7 @@ model SupplierLedgerEntry {
   payableAllocations SupplierPaymentAllocation[] @relation("PayableAllocations")
 
   @@index([supplierId, date])
+  @@index([operationId])
 }
 
 model SupplierPaymentAllocation {

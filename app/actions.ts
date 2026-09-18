@@ -5,6 +5,7 @@ import { Prisma, StockMovementKind } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { clearSession, createSession, requirePermission, requireUser } from "@/lib/auth";
@@ -770,6 +771,7 @@ export async function createSupplierPayment(form: FormData) {
 
 export async function createFuelDispense(form: FormData) {
   const user = await requirePermission("fuel.manage");
+  const operationId = randomUUID();
   const source = text(form, "source") as "INTERNAL_TANK" | "DIRECT_SUPPLIER";
   if (!["INTERNAL_TANK", "DIRECT_SUPPLIER"].includes(source)) throw new Error("Origem do abastecimento inválida.");
   const tankId = source === "INTERNAL_TANK" ? text(form, "tankId") : null;
@@ -829,14 +831,16 @@ export async function createFuelDispense(form: FormData) {
     const creditAccountId = accountMap.get(source === "INTERNAL_TANK" ? "1.3" : paymentTerm === "CREDIT" ? "2.1" : "1.1");
     if (!debitAccountId || !creditAccountId) throw new Error("Configure as contas 1.1, 1.3, 2.1 e 4.1 antes de registrar abastecimentos.");
     const entry = await tx.accountingEntry.create({ data: {
+      operationId,
       date, competence, history: `${source === "DIRECT_SUPPLIER" ? "Abastecimento direto" : "Abastecimento do tanque"} - ${asset.identifier}`,
       document, workId, assetId, personId,
       entryTypeId, createdById: user.userId, lines: { create: [
-        { accountId: debitAccountId, debit: totalCost, credit: 0 },
-        { accountId: creditAccountId, debit: 0, credit: totalCost },
+        { operationId, accountId: debitAccountId, debit: totalCost, credit: 0 },
+        { operationId, accountId: creditAccountId, debit: 0, credit: totalCost },
       ] },
     }});
     const saved = await tx.fuelDispense.create({ data: {
+      operationId,
       date, liters, meter, fullTank: true, meterDelta, consumptionRate, unitCost, totalCost,
       source, document, unitPrice, paymentTerm, dueDate, reimbursable,
       reimbursementAmount: reimbursable ? totalCost : 0,
@@ -845,6 +849,7 @@ export async function createFuelDispense(form: FormData) {
     }});
     if (source === "DIRECT_SUPPLIER" && paymentTerm === "CREDIT") {
       await tx.supplierLedgerEntry.create({ data: {
+        operationId,
         date, dueDate, description: `Abastecimento direto - ${asset.identifier}`, document, credit: totalCost,
         supplierId: supplierId!, dispenseId: saved.id, entryId: entry.id, createdById: user.userId,
       }});
@@ -899,6 +904,107 @@ export async function createFuelDispenseWithFeedback(form: FormData) {
       field: field || "form",
     };
   }
+}
+
+async function recalculateAssetConsumption(tx: Prisma.TransactionClient, assetId: string) {
+  const asset = await tx.asset.findUniqueOrThrow({ where: { id: assetId }, select: { consumptionMetric: true } });
+  const rows = await tx.fuelDispense.findMany({ where: { assetId, fullTank: true }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] });
+  let previousMeter: Prisma.Decimal | null = null;
+  for (const row of rows) {
+    const meterDelta = previousMeter && row.meter ? row.meter.minus(previousMeter) : null;
+    if (meterDelta && meterDelta.lte(0)) throw new Error("A sequência de medidores do equipamento deve ser crescente.");
+    const consumptionRate = meterDelta
+      ? (asset.consumptionMetric === "LITERS_PER_HOUR" ? row.liters.div(meterDelta) : meterDelta.div(row.liters)).toDecimalPlaces(3)
+      : null;
+    await tx.fuelDispense.update({ where: { id: row.id }, data: { meterDelta, consumptionRate } });
+    previousMeter = row.meter;
+  }
+}
+
+const revalidateFuelDispense = () => {
+  revalidatePath("/combustivel"); revalidatePath("/combustivel/abastecimentos"); revalidatePath("/combustivel/compras");
+  revalidatePath("/tanques-combustivel"); revalidatePath("/lancamentos"); revalidatePath("/combustivel/medicoes");
+  revalidatePath("/relatorios/fornecedores"); revalidatePath("/relatorios/abastecimentos"); revalidatePath("/relatorios/centro-custos");
+};
+
+export async function updateFuelDispense(form: FormData) {
+  const user = await requirePermission("fuel.manage");
+  const id = text(form, "id");
+  const date = when(form, "date");
+  const liters = decimal(form, "liters");
+  const meter = decimal(form, "meter");
+  const personId = optional(form, "personId");
+  const document = optional(form, "document");
+  const notes = optional(form, "notes");
+  const current = await db.fuelDispense.findUniqueOrThrow({ where: { id }, include: { measurement: true, asset: true } });
+  await assertOpen(current.workId, current.date);
+  const competence = await assertOpen(current.workId, date);
+  if (current.measurement?.status === "CLOSED") throw new Error("Abastecimentos de uma medição fechada não podem ser alterados.");
+  if (current.measurement && (date < current.measurement.periodStart || date > current.measurement.periodEnd)) throw new Error("A data deve permanecer dentro do período da medição em rascunho.");
+  if (liters.lte(0) || !current.asset.fuelTankCapacity || liters.gt(current.asset.fuelTankCapacity)) throw new Error("A quantidade abastecida é inválida ou supera a capacidade do equipamento.");
+  if (meter.lt(0)) throw new Error("Horímetro/odômetro inválido.");
+  const unitPrice = current.source === "DIRECT_SUPPLIER" ? decimal(form, "unitPrice") : null;
+  if (current.source === "DIRECT_SUPPLIER" && current.paymentTerm === "CREDIT" && !text(form, "dueDate")) throw new Error("Informe o vencimento do abastecimento a prazo.");
+  const dueDate = current.source === "DIRECT_SUPPLIER" && current.paymentTerm === "CREDIT" ? when(form, "dueDate") : null;
+  if (current.source === "DIRECT_SUPPLIER" && (!document || !unitPrice || unitPrice.lte(0))) throw new Error("Informe documento e preço por litro válidos.");
+  if (current.source === "DIRECT_SUPPLIER" && await db.fuelDispense.count({ where: { supplierId: current.supplierId, document, id: { not: id } } })) throw new Error("Já existe um abastecimento deste fornecedor com o mesmo documento.");
+  await db.$transaction(async (tx) => {
+    if (current.tankId) {
+      const [purchases, dispenses] = await Promise.all([
+        tx.fuelPurchase.aggregate({ where: { tankId: current.tankId }, _sum: { liters: true } }),
+        tx.fuelDispense.aggregate({ where: { tankId: current.tankId, id: { not: id } }, _sum: { liters: true } }),
+      ]);
+      const available = (purchases._sum.liters ?? new Prisma.Decimal(0)).minus(dispenses._sum.liters ?? 0);
+      if (liters.gt(available)) throw new Error("Saldo de combustível insuficiente no tanque selecionado.");
+    }
+    const totalCost = (unitPrice ?? current.unitCost).mul(liters).toDecimalPlaces(2);
+    await tx.fuelDispense.update({ where: { id }, data: {
+      date, liters, meter, document, notes, personId, unitPrice,
+      dueDate, unitCost: unitPrice ?? current.unitCost, totalCost,
+      reimbursementAmount: current.reimbursable ? totalCost : 0,
+    } });
+    if (current.entryId) {
+      await tx.accountingEntry.update({ where: { id: current.entryId }, data: { date, competence, document, personId } });
+      await tx.accountingLine.updateMany({ where: { entryId: current.entryId, debit: { gt: 0 } }, data: { debit: totalCost } });
+      await tx.accountingLine.updateMany({ where: { entryId: current.entryId, credit: { gt: 0 } }, data: { credit: totalCost } });
+    }
+    const ledger = await tx.supplierLedgerEntry.findUnique({ where: { dispenseId: id } });
+    if (ledger) await tx.supplierLedgerEntry.update({ where: { id: ledger.id }, data: { date, dueDate, document, credit: totalCost } });
+    await recalculateAssetConsumption(tx, current.assetId);
+    if (current.measurementId) {
+      const total = (await tx.fuelDispense.aggregate({ where: { measurementId: current.measurementId }, _sum: { reimbursementAmount: true } }))._sum.reimbursementAmount ?? new Prisma.Decimal(0);
+      await tx.fuelMeasurement.update({ where: { id: current.measurementId }, data: { total } });
+    }
+    if (current.supplierId && ledger) await reallocateSupplierPayments(tx, current.supplierId);
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  await audit(user.userId, "UPDATE", "FuelDispense", id, { operationId: current.operationId });
+  revalidateFuelDispense();
+}
+
+export async function deleteFuelDispense(form: FormData) {
+  const user = await requirePermission("fuel.manage");
+  if (text(form, "confirmDelete") !== "true") throw new Error("Confirme a exclusão da operação.");
+  const id = text(form, "id");
+  const current = await db.fuelDispense.findUniqueOrThrow({ where: { id }, include: { measurement: true } });
+  await assertOpen(current.workId, current.date);
+  if (current.measurement?.status === "CLOSED") throw new Error("Abastecimentos de uma medição fechada não podem ser excluídos.");
+  await db.$transaction(async (tx) => {
+    const ledger = await tx.supplierLedgerEntry.findUnique({ where: { dispenseId: id } });
+    if (ledger) {
+      await tx.supplierPaymentAllocation.deleteMany({ where: { OR: [{ payableId: ledger.id }, { paymentId: ledger.id }] } });
+      await tx.supplierLedgerEntry.delete({ where: { id: ledger.id } });
+    }
+    await tx.fuelDispense.delete({ where: { id } });
+    if (current.entryId) await tx.accountingEntry.delete({ where: { id: current.entryId } });
+    await recalculateAssetConsumption(tx, current.assetId);
+    if (current.measurementId) {
+      const total = (await tx.fuelDispense.aggregate({ where: { measurementId: current.measurementId }, _sum: { reimbursementAmount: true } }))._sum.reimbursementAmount ?? new Prisma.Decimal(0);
+      await tx.fuelMeasurement.update({ where: { id: current.measurementId }, data: { total } });
+    }
+    if (current.supplierId && ledger) await reallocateSupplierPayments(tx, current.supplierId);
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  await audit(user.userId, "DELETE", "FuelDispense", id, { operationId: current.operationId });
+  revalidateFuelDispense();
 }
 
 const measurementPeriod = (value: string) => {

@@ -237,6 +237,10 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 - Abastecimentos reembolsáveis ficam pendentes de medição. O fechamento mensal
   por obra consolida o custo real e lança Clientes contra Reembolso de
   combustíveis.
+- O identificador da operação vincula o abastecimento ao lançamento contábil e
+  à conta do fornecedor. Alteração e exclusão são permitidas somente com a
+  competência aberta e sem medição fechada, atualizando os registros vinculados
+  na mesma transação.
 
 ### Almoxarifado
 

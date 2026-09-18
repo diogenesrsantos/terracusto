@@ -218,6 +218,13 @@ tbody tr:hover { background: #f8faf8; }
 .measurement-card { display: grid; gap: .8rem; padding: 1rem; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfb; }
 .measurement-card p { margin: 0; }
 .measurement-actions { margin-top: .2rem; }
+.action-link { cursor: pointer; color: var(--brand); font-weight: 750; white-space: nowrap; }
+.compact-edit-form, .compact-delete-form { display: grid; gap: .45rem; min-width: 280px; margin-top: .6rem; padding: .65rem; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.compact-edit-form label { display: grid; gap: .2rem; font-size: .72rem; font-weight: 700; }
+.compact-edit-form input, .compact-edit-form select { min-width: 0; padding: .42rem; }
+.compact-delete-form { border-color: #e8b7b4; background: #fff8f7; font-size: .75rem; }
+.compact-delete-form label { display: flex; align-items: center; gap: .35rem; }
+.danger-btn { background: var(--danger); }
 @media print {
   @page { margin: 5mm; }
   body { background: white; }

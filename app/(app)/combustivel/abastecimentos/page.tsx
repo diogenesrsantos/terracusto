@@ -1,7 +1,8 @@
-import { Empty, PageHead } from "@/components/page";
+import { PageHead } from "@/components/page";
 import { FuelDispenseForm } from "@/components/fuel-dispense-form";
+import { FuelDispenseHistory } from "@/components/fuel-dispense-history";
 import { db } from "@/lib/db";
-import { businessToday, money, monthStart, number } from "@/lib/format";
+import { businessToday, monthStart } from "@/lib/format";
 import { requirePermission } from "@/lib/auth";
 
 export default async function FuelDispensesPage() {
@@ -36,6 +37,6 @@ export default async function FuelDispensesPage() {
       people={people.map((person) => ({ id: person.id, label: person.name }))}
       entryTypes={entryTypes.map((type) => ({ id: type.id, label: `${type.name} — D: ${type.defaultDebitAccount.code} / C estoque: ${type.defaultCreditAccount.code}` }))}
     /></section>
-    <section className="card mt"><h2>Últimos abastecimentos</h2>{dispenses.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Origem</th><th>Equipamento</th><th>Obra</th><th>Litros</th><th>Medidor</th><th>Média</th><th>Custo</th><th>Medição</th></tr></thead><tbody>{dispenses.map((d) => <tr key={d.id}><td>{d.date.toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td>{d.source === "DIRECT_SUPPLIER" ? d.supplier?.name || "Fornecedor" : d.tank?.name || "Tanque"}<br /><small>{d.fuelType.name}{d.document ? ` · ${d.document}` : ""}</small></td><td>{d.asset.identifier}<br /><small>{d.person?.name || "Sem operador"}</small></td><td>{d.work.code}</td><td>{number(d.liters, 3)}</td><td>{d.meter ? number(d.meter, 2) : "—"}</td><td>{d.consumptionRate ? `${number(d.consumptionRate, 3)} ${d.asset.consumptionMetric === "LITERS_PER_HOUR" ? "L/h" : "km/L"}` : "Primeira referência"}</td><td>{money(d.totalCost)}</td><td>{!d.reimbursable ? "Não reembolsável" : d.measurement ? `Medição ${d.measurement.number}` : "Pendente"}</td></tr>)}</tbody></table></div>}</section>
+    <section className="card mt"><h2>Últimos abastecimentos</h2><FuelDispenseHistory dispenses={dispenses} people={people.map((person) => ({ id: person.id, name: person.name }))} /></section>
   </>;
 }

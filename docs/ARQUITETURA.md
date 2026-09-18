@@ -101,6 +101,13 @@ custo unitário e total. A origem pode ser tanque interno, com baixa física, ou
 fornecedor direto, com preço da nota e eventual título a pagar. A sequência de
 consumo é única por equipamento.
 
+Cada abastecimento possui um `operationId` único, repetido no lançamento
+contábil e no registro da conta do fornecedor gerados pela mesma operação. A
+edição e a exclusão partem de `FuelDispense` e atualizam esses registros em uma
+única transação. Somente competências abertas e abastecimentos fora de medições
+fechadas podem ser alterados; após a mudança, a sequência de consumo do
+equipamento, a medição em rascunho e as alocações do fornecedor são recalculadas.
+
 `FuelMeasurement` agrupa por obra e competência os abastecimentos marcados para
 reembolso. O rascunho pode incorporar novos itens e excluir custos não
 reembolsáveis; o fechamento cria atomicamente o lançamento Clientes contra
