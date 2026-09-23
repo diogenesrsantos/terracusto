@@ -49,6 +49,7 @@ clientes nem conteúdo das variáveis de ambiente.
 | `/combustivel/abastecimentos` | Abastecimentos | `fuel.manage` | Tanque cheio, saída contabilizada e média `km/L` ou `L/h` |
 | `/combustivel/medicoes` | Medições de combustível | `fuel.manage` | Consolidação mensal de abastecimentos reembolsáveis por obra |
 | `/relatorios/fornecedores` | Relatório de fornecedores | `fuel.manage` | Dívida consolidada e títulos detalhados por empresa |
+| `/relatorios/abastecimentos` | Relatório de abastecimentos | `fuel.manage` | Formatos detalhado e sucinto por centro de custo ou combustível |
 | `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas, ajustes positivos, saldos e alerta de reposição |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens preventivas/corretivas |
 | `/perfil` | Minha senha | usuário autenticado | Alteração da própria senha |

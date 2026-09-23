@@ -24,7 +24,7 @@
 | `/combustivel/abastecimentos` | Abastecimentos | `fuel.manage` | Saída, contabilização e média de consumo por equipamento |
 | `/combustivel/medicoes` | Medições de combustível | `fuel.manage` | Consolidação mensal dos custos reembolsáveis por obra |
 | `/relatorios/fornecedores` | Relatório de fornecedores | `fuel.manage` | Resumo geral e títulos detalhados por fornecedor |
-| `/relatorios/abastecimentos` | Relatório de abastecimentos | `fuel.manage` | Abastecimentos diretos por centro de custo e competência, agrupados por posto e equipamento |
+| `/relatorios/abastecimentos` | Relatório de abastecimentos | `fuel.manage` | Relatórios detalhados ou sucintos por centro de custo e por combustível, filtrados por competência |
 | `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas e ajustes positivos |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens de serviço |
 | `/perfil` | Minha conta | Usuário autenticado | Troca de senha |

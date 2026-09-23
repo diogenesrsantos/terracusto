@@ -7,9 +7,11 @@ combustível, almoxarifado e manutenção.
 ## Estado atual
 
 - Produção: <https://terracusto.provizi.net.br>
-- Branch das evoluções implantadas: `chore/documentacao-sistema-20260829`
-- Última versão implantada: `8157616` (tanques, contabilização de
-  abastecimentos e cálculo de consumo)
+- Branch das evoluções: `chore/documentacao-sistema-20260829`
+- Última versão de produção confirmada: pacote publicado em 18/09/2026,
+  baseado no commit `74e3074` e incluindo os relatórios sucintos de
+  abastecimentos
+- Código-base do checkout: `74e3074` (editor suspenso de abastecimentos)
 - Versão inicial de referência: commit `66a7b02` (`feat: implementa sistema TerraCusto`)
 - Stack: Next.js 16, React 19, TypeScript, Prisma 6 e PostgreSQL
 - Processo: systemd em `terracusto.service`, porta interna `3120`
@@ -19,6 +21,12 @@ combustível, almoxarifado e manutenção.
 O estado de produção acima foi validado em 15/09/2026, com 16 migrations
 aplicadas, 28 rotas geradas e health check de aplicação/banco `ok`. Consulte
 [docs/ESTADO-ATUAL.md](docs/ESTADO-ATUAL.md) antes de uma nova alteração.
+
+Em 18/09/2026, os relatórios sucintos de abastecimentos foram publicados na
+VPS. A atualização não alterou o banco; as 19 migrations estavam aplicadas,
+o build remoto foi concluído e o health check de aplicação/banco retornou
+`ok`. O pacote foi baseado no checkout do commit `74e3074`, que também contém
+as alterações locais dos relatórios.
 
 Em 16/09/2026 foi publicada a evolução de abastecimentos diretos em postos,
 baixa FIFO de fornecedores, medições mensais de combustível e relatórios de

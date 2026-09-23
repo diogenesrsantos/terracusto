@@ -1,5 +1,48 @@
 # Estado atual
 
+## Atualização do checkout em 18/09/2026
+
+O checkout local está limpo e alinhado com a origem na branch
+`chore/documentacao-sistema-20260829`. O código atual está no commit
+`74e3074` (`feat: adiciona editor suspenso de abastecimentos`) e inclui as
+evoluções realizadas em 17 e 18/09/2026:
+
+- agrupamento e filtros do relatório de abastecimentos por obra, combustível,
+  posto, equipamento e competência;
+- exibição do consumo no relatório por centro de custo;
+- versões sucintas dos relatórios por centro de custo e por combustível; o
+  formato por combustível apresenta por equipamento `Placa`, `Equipamentos`,
+  `Tot. L`, `Tot. Valor`, a média `Km/L-L/h` e a `Unidade` correspondente; o
+  formato sucinto por centro de custo também apresenta a média `Km/L-L/h` por
+  equipamento;
+- vínculo por `operationId` entre abastecimento, lançamento contábil e conta do
+  fornecedor;
+- alteração e exclusão de abastecimentos com recálculo dos registros
+  relacionados na mesma transação;
+- editor suspenso para consultar e editar abastecimentos diretamente no
+  histórico.
+
+O repositório contém 19 migrations. Foram aprovados localmente o typecheck, a
+validação do schema Prisma, o `git diff --check` e o build de produção. O
+build atual gerou 31 rotas. Não foram encontradas alterações pendentes,
+processos residuais ou arquivos de ambiente/segredo versionados além do
+`.env.example`.
+
+Em 18/09/2026, os formatos sucintos dos relatórios de abastecimentos foram
+publicados na VPS a partir deste checkout. A atualização não alterou o schema:
+as 19 migrations já estavam aplicadas e não havia migration pendente. Foi
+preservada a cópia do código anterior em
+`/var/backups/terracusto/terracusto-source-20260918-123733.tar.gz`. Após
+`npm ci` e o build remoto, o serviço foi reiniciado e permaneceu ativo; o
+health check retornou aplicação e banco `ok`, a rota pública respondeu HTTP 307
+para `/login`, o Nginx passou na validação e o timer de backup permaneceu ativo.
+O smoke autenticado não foi executado nesta atualização por depender de
+credenciais administrativas.
+
+O pacote publicado foi baseado no commit `74e3074` e nas alterações locais dos
+relatórios sucintos. O Git local estava montado como somente leitura e não
+permitiu criar um novo commit durante a publicação.
+
 Em 16/09/2026 foi implementada e publicada a
 evolução de abastecimentos e medições. Abastecimentos podem vir de tanque
 interno ou diretamente de fornecedor; compras a prazo geram títulos e
