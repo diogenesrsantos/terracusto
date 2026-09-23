@@ -24,6 +24,7 @@ export function FuelDispenseForm({
   const [fuelTypeId, setFuelTypeId] = useState("");
   const [tankId, setTankId] = useState("");
   const [unitPrice, setUnitPrice] = useState("");
+  const [liters, setLiters] = useState("");
   const [workId, setWorkId] = useState("");
   const [paymentTerm, setPaymentTerm] = useState<"CASH" | "CREDIT">("CASH");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -31,6 +32,7 @@ export function FuelDispenseForm({
   const [pending, setPending] = useState(false);
   const selectedWork = useMemo(() => works.find((work) => work.id === workId), [workId, works]);
   const workHasClient = selectedWork?.hasClient || false;
+  const calculatedTotal = Number(unitPrice) > 0 && Number(liters) > 0 ? (Number(unitPrice) * Number(liters)).toFixed(2) : "";
 
   const clearError = (field: string) => setFieldErrors((current) => {
     if (!current[field]) return current;
@@ -65,7 +67,8 @@ export function FuelDispenseForm({
     <label className="field">Combustível<select name="fuelTypeId" value={fuelTypeId} onChange={(event) => { setFuelTypeId(event.target.value); clearError("fuelTypeId"); }} aria-invalid={Boolean(error("fuelTypeId"))} required><option value="">Selecione</option>{fuelTypes.map((fuelType) => <option key={fuelType.id} value={fuelType.id}>{fuelType.label}</option>)}</select>{error("fuelTypeId") && <small className="field-error">{error("fuelTypeId")}</small>}</label>
     {source === "DIRECT_SUPPLIER" && <label className="field">Nota/cupom<input name="document" onChange={() => clearError("document")} aria-invalid={Boolean(error("document"))} required />{error("document") && <small className="field-error">{error("document")}</small>}</label>}
     <label className="field">Valor por litro<input name="unitPrice" type="number" min="0.0001" step="0.0001" value={unitPrice} onChange={(event) => { setUnitPrice(event.target.value); clearError("unitPrice"); }} aria-invalid={Boolean(error("unitPrice"))} required />{source === "INTERNAL_TANK" && <small className="muted">Valor médio atual do tanque; pode ser alterado neste lançamento.</small>}{error("unitPrice") && <small className="field-error">{error("unitPrice")}</small>}</label>
-    <label className="field">Litros a completar<input name="liters" type="number" min="0.001" step="0.001" onChange={() => clearError("liters")} aria-invalid={Boolean(error("liters"))} required />{error("liters") && <small className="field-error">{error("liters")}</small>}</label>
+    <label className="field">Litros a completar<input name="liters" type="number" min="0.001" step="0.001" value={liters} onChange={(event) => { setLiters(event.target.value); clearError("liters"); }} aria-invalid={Boolean(error("liters"))} required />{error("liters") && <small className="field-error">{error("liters")}</small>}</label>
+    <label className="field">Valor total<input name="totalCost" type="number" value={calculatedTotal} readOnly aria-readonly="true" tabIndex={-1} /><small className="muted">Cálculo: valor por litro × litros.</small></label>
     <label className="field">Horímetro/odômetro atual<input name="meter" type="number" min="0" step="0.01" onChange={() => clearError("meter")} aria-invalid={Boolean(error("meter"))} required />{error("meter") && <small className="field-error">{error("meter")}</small>}</label>
     {source === "DIRECT_SUPPLIER" && <><label className="field">Pagamento<select name="paymentTerm" value={paymentTerm} onChange={(event) => { setPaymentTerm(event.target.value as typeof paymentTerm); clearError("paymentTerm"); }} aria-invalid={Boolean(error("paymentTerm"))}><option value="CASH">À vista</option><option value="CREDIT">A prazo</option></select>{error("paymentTerm") && <small className="field-error">{error("paymentTerm")}</small>}</label>{paymentTerm === "CREDIT" && <label className="field">Vencimento<input name="dueDate" type="date" onChange={() => clearError("dueDate")} aria-invalid={Boolean(error("dueDate"))} required />{error("dueDate") && <small className="field-error">{error("dueDate")}</small>}</label>}</>}
     <label className="field span-2">Motorista/operador<select name="personId" onChange={() => clearError("personId")} aria-invalid={Boolean(error("personId"))}><option value="">Opcional</option>{people.map((person) => <option key={person.id} value={person.id}>{person.label}</option>)}</select>{error("personId") && <small className="field-error">{error("personId")}</small>}</label>

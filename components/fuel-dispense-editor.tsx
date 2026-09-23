@@ -23,6 +23,11 @@ export function FuelDispenseEditor({ row, people }: { row: EditorDispense; peopl
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [editLiters, setEditLiters] = useState(row.liters);
+  const [editUnitPrice, setEditUnitPrice] = useState(row.unitPrice);
+  const [editTotalCost, setEditTotalCost] = useState(row.totalCost);
+  const [totalEdited, setTotalEdited] = useState(false);
+  const calculatedEditTotal = (liters: string, unitPrice: string) => Number(liters) > 0 && Number(unitPrice) > 0 ? (Number(liters) * Number(unitPrice)).toFixed(2) : "";
 
   useEffect(() => {
     if (!open) return;
@@ -63,11 +68,11 @@ export function FuelDispenseEditor({ row, people }: { row: EditorDispense; peopl
           <form action={save} className="editor-form">
             <input type="hidden" name="id" value={row.id} />
             <label>Data<input type="date" name="date" defaultValue={row.date} required /></label>
-            <label>Litros<input type="number" name="liters" min="0.001" step="0.001" defaultValue={row.liters} required /></label>
+            <label>Litros<input type="number" name="liters" min="0.001" step="0.001" value={editLiters} onChange={(event) => { const value = event.target.value; setEditLiters(value); if (!totalEdited) setEditTotalCost(calculatedEditTotal(value, editUnitPrice)); }} required /></label>
             <label>Horímetro/odômetro<input type="number" name="meter" min="0" step="0.01" defaultValue={row.meter} required /></label>
             {row.source === "DIRECT_SUPPLIER" && <label>Documento/cupom<input name="document" defaultValue={row.document} required /></label>}
-            <label>Valor por litro<input type="number" name="unitPrice" min="0.0001" step="0.0001" defaultValue={row.unitPrice} required /></label>
-            <label>Valor total<input type="number" name="totalCost" min="0.01" step="0.01" defaultValue={row.totalCost} required /></label>
+            <label>Valor por litro<input type="number" name="unitPrice" min="0.0001" step="0.0001" value={editUnitPrice} onChange={(event) => { const value = event.target.value; setEditUnitPrice(value); if (!totalEdited) setEditTotalCost(calculatedEditTotal(editLiters, value)); }} required /></label>
+            <label>Valor total<input type="number" name="totalCost" min="0.01" step="0.01" value={editTotalCost} onChange={(event) => { setEditTotalCost(event.target.value); setTotalEdited(true); }} required /><small className="muted">Cálculo inicial: valor por litro × litros; pode ser ajustado.</small></label>
             {row.source === "DIRECT_SUPPLIER" && row.paymentTerm === "CREDIT" && <label>Vencimento<input type="date" name="dueDate" defaultValue={row.dueDate} required /></label>}
             <label>Motorista/operador<select name="personId" defaultValue={row.personId}><option value="">Sem operador</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
             <label className="editor-wide">Observação<input name="notes" defaultValue={row.notes} /></label>
