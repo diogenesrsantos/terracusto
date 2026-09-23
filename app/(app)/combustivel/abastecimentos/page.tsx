@@ -9,7 +9,7 @@ export default async function FuelDispensesPage() {
   await requirePermission("fuel.manage");
   const currentCompetence = monthStart(businessToday());
   const [tanks, fuelTypes, suppliers, works, assets, people, entryTypes, dispenses] = await Promise.all([
-    db.fuelTank.findMany({ where: { active: true, fuelType: { active: true } }, include: { fuelType: true }, orderBy: { name: "asc" } }),
+    db.fuelTank.findMany({ where: { active: true, fuelType: { active: true } }, include: { fuelType: true, purchases: { select: { liters: true, total: true } }, dispenses: { select: { liters: true, totalCost: true } } }, orderBy: { name: "asc" } }),
     db.fuelType.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     db.company.findMany({ where: { active: true, isFuelSupplier: true }, orderBy: { name: "asc" } }),
     db.work.findMany({
@@ -24,7 +24,11 @@ export default async function FuelDispensesPage() {
   ]);
   return <><PageHead title="Abastecimentos" subtitle="Registre abastecimentos de tanque interno ou diretamente do fornecedor." />
     <section className="card"><h2>Registrar abastecimento</h2><FuelDispenseForm
-      tanks={tanks.map((tank) => ({ id: tank.id, fuelTypeId: tank.fuelTypeId, label: `${tank.name} — ${tank.fuelType.name}` }))}
+      tanks={tanks.map((tank) => {
+        const liters = tank.purchases.reduce((sum, row) => sum + Number(row.liters), 0) - tank.dispenses.reduce((sum, row) => sum + Number(row.liters), 0);
+        const value = tank.purchases.reduce((sum, row) => sum + Number(row.total), 0) - tank.dispenses.reduce((sum, row) => sum + Number(row.totalCost), 0);
+        return { id: tank.id, fuelTypeId: tank.fuelTypeId, label: `${tank.name} — ${tank.fuelType.name}`, unitPrice: liters > 0 && value > 0 ? (value / liters).toFixed(4) : "" };
+      })}
       fuelTypes={fuelTypes.map((fuelType) => ({ id: fuelType.id, label: fuelType.name }))}
       suppliers={suppliers.map((supplier) => ({ id: supplier.id, label: supplier.name }))}
       works={works.map((work) => ({

@@ -802,10 +802,10 @@ export async function createFuelDispense(form: FormData) {
   if (entryType.requiresPerson && !personId) throw new Error("O tipo de lançamento exige operador ou motorista.");
   const paymentTerm = source === "DIRECT_SUPPLIER" ? text(form, "paymentTerm") as "CASH" | "CREDIT" : null;
   const document = source === "DIRECT_SUPPLIER" ? text(form, "document") : null;
-  const unitPrice = source === "DIRECT_SUPPLIER" ? decimal(form, "unitPrice") : null;
+  const unitPrice = decimal(form, "unitPrice");
   const dueDate = source === "DIRECT_SUPPLIER" && paymentTerm === "CREDIT" ? when(form, "dueDate") : null;
   if (source === "DIRECT_SUPPLIER" && !document) throw new Error("Informe o documento ou cupom do abastecimento direto.");
-  if (source === "DIRECT_SUPPLIER" && (!unitPrice || unitPrice.lte(0))) throw new Error("Informe um preço por litro válido.");
+  if (unitPrice.lte(0)) throw new Error("Informe um preço por litro válido.");
   if (source === "DIRECT_SUPPLIER" && !(["CASH", "CREDIT"] as const).includes(paymentTerm!)) throw new Error("Forma de pagamento inválida.");
   if (source === "DIRECT_SUPPLIER" && paymentTerm === "CREDIT" && !text(form, "dueDate")) throw new Error("Informe o vencimento do abastecimento a prazo.");
   if (source === "DIRECT_SUPPLIER" && await db.fuelDispense.count({ where: { supplierId, document } })) throw new Error("Já existe um abastecimento deste fornecedor com o mesmo documento.");
@@ -823,8 +823,7 @@ export async function createFuelDispense(form: FormData) {
     const meterDelta = previous?.meter ? meter.minus(previous.meter) : null;
     if (meterDelta && meterDelta.lte(0)) throw new Error("O medidor deve ser maior que o do abastecimento completo anterior.");
     const consumptionRate = meterDelta ? (asset.consumptionMetric === "LITERS_PER_HOUR" ? liters.div(meterDelta) : meterDelta.div(liters)).toDecimalPlaces(3) : null;
-    const inventoryValue = purchases && dispenses ? (purchases._sum.total ?? new Prisma.Decimal(0)).minus(dispenses._sum.totalCost ?? 0) : null;
-    const unitCost = source === "DIRECT_SUPPLIER" ? unitPrice! : available!.gt(0) ? inventoryValue!.div(available!).toDecimalPlaces(4) : new Prisma.Decimal(0);
+    const unitCost = unitPrice;
     const totalCost = unitCost.mul(liters).toDecimalPlaces(2);
     const accountMap = new Map(financialAccounts.map((account) => [account.code, account.id]));
     const debitAccountId = accountMap.get("4.1");
@@ -943,10 +942,11 @@ export async function updateFuelDispense(form: FormData) {
   if (current.measurement && (date < current.measurement.periodStart || date > current.measurement.periodEnd)) throw new Error("A data deve permanecer dentro do período da medição em rascunho.");
   if (liters.lte(0) || !current.asset.fuelTankCapacity || liters.gt(current.asset.fuelTankCapacity)) throw new Error("A quantidade abastecida é inválida ou supera a capacidade do equipamento.");
   if (meter.lt(0)) throw new Error("Horímetro/odômetro inválido.");
-  const unitPrice = current.source === "DIRECT_SUPPLIER" ? decimal(form, "unitPrice") : null;
+  const unitPrice = decimal(form, "unitPrice");
+  const totalCost = decimal(form, "totalCost");
   if (current.source === "DIRECT_SUPPLIER" && current.paymentTerm === "CREDIT" && !text(form, "dueDate")) throw new Error("Informe o vencimento do abastecimento a prazo.");
   const dueDate = current.source === "DIRECT_SUPPLIER" && current.paymentTerm === "CREDIT" ? when(form, "dueDate") : null;
-  if (current.source === "DIRECT_SUPPLIER" && (!document || !unitPrice || unitPrice.lte(0))) throw new Error("Informe documento e preço por litro válidos.");
+  if ((current.source === "DIRECT_SUPPLIER" && !document) || unitPrice.lte(0) || totalCost.lte(0)) throw new Error("Informe documento, valor unitário e valor total válidos.");
   if (current.source === "DIRECT_SUPPLIER" && await db.fuelDispense.count({ where: { supplierId: current.supplierId, document, id: { not: id } } })) throw new Error("Já existe um abastecimento deste fornecedor com o mesmo documento.");
   await db.$transaction(async (tx) => {
     if (current.tankId) {
@@ -957,10 +957,10 @@ export async function updateFuelDispense(form: FormData) {
       const available = (purchases._sum.liters ?? new Prisma.Decimal(0)).minus(dispenses._sum.liters ?? 0);
       if (liters.gt(available)) throw new Error("Saldo de combustível insuficiente no tanque selecionado.");
     }
-    const totalCost = (unitPrice ?? current.unitCost).mul(liters).toDecimalPlaces(2);
+    const unitCost = totalCost.div(liters).toDecimalPlaces(4);
     await tx.fuelDispense.update({ where: { id }, data: {
-      date, liters, meter, document, notes, personId, unitPrice,
-      dueDate, unitCost: unitPrice ?? current.unitCost, totalCost,
+      date, liters, meter, document, notes, personId,
+      dueDate, unitPrice, unitCost, totalCost,
       reimbursementAmount: current.reimbursable ? totalCost : 0,
     } });
     if (current.entryId) {

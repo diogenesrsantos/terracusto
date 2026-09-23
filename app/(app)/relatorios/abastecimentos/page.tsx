@@ -24,9 +24,10 @@ const consumptionUnit = (equipmentTypeName: string, metric: string | null) => {
 export default async function FuelDispenseReportPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   await requirePermission("fuel.manage");
   const params = await searchParams;
-  const reportType = params.reportType === "fuel" || params.reportType === "fuel-summary" || params.reportType === "cost-center-summary" ? params.reportType : "cost-center";
+  const reportType = params.reportType === "fuel" || params.reportType === "fuel-summary" || params.reportType === "cost-center-summary" || params.reportType === "equipment" ? params.reportType : "cost-center";
   const isCostCenterReport = reportType === "cost-center" || reportType === "cost-center-summary";
   const isFuelReport = reportType === "fuel" || reportType === "fuel-summary";
+  const isEquipmentReport = reportType === "equipment";
   const works = await db.work.findMany({ where: { active: true }, orderBy: { code: "asc" } });
   const selectedWork = works.find((work) => work.id === params.workId);
   const suppliers = await db.company.findMany({ where: { active: true, isFuelSupplier: true }, orderBy: { name: "asc" } });
@@ -102,14 +103,44 @@ export default async function FuelDispenseReportPage({ searchParams }: { searchP
   const costSummaryAssets = Array.from(costSummaryMap.values()).sort((left, right) => left.identifier.localeCompare(right.identifier, "pt-BR"));
   const costSummaryTotals = costSummaryAssets.reduce((total, asset) => ({ liters: total.liters + asset.liters, value: total.value + asset.total, meter: total.meter + asset.meterTotal }), { liters: 0, value: 0, meter: 0 });
 
+  const equipmentDispenses = isEquipmentReport ? await db.fuelDispense.findMany({
+    where: selectedWork ? { workId: selectedWork.id } : {},
+    include: { asset: true, person: true, supplier: true, tank: true, work: true },
+    orderBy: [{ asset: { identifier: "asc" } }, { date: "asc" }, { createdAt: "asc" }],
+  }) : [];
+  type EquipmentDispense = (typeof equipmentDispenses)[number];
+  type EquipmentGroup = { id: string; identifier: string; description: string; rows: EquipmentDispense[]; liters: number; total: number };
+  const equipmentMap = new Map<string, EquipmentGroup>();
+  for (const dispense of equipmentDispenses) {
+    const group = equipmentMap.get(dispense.assetId) || { id: dispense.assetId, identifier: dispense.asset.identifier, description: dispense.asset.description, rows: [], liters: 0, total: 0 };
+    group.rows.push(dispense);
+    group.liters += Number(dispense.liters);
+    group.total += Number(dispense.totalCost);
+    equipmentMap.set(dispense.assetId, group);
+  }
+  const equipmentGroups = Array.from(equipmentMap.values());
+  const equipmentTotals = equipmentGroups.reduce((total, group) => ({ liters: total.liters + group.liters, value: total.value + group.total }), { liters: 0, value: 0 });
+  const dispenseOrigin = (dispense: EquipmentDispense) => dispense.source === "DIRECT_SUPPLIER" ? dispense.supplier?.name || "Posto não informado" : dispense.tank?.name || "Tanque não informado";
+
   return <>
-    <div className="no-print"><PageHead title="Relatório de abastecimentos" subtitle="Consulte abastecimentos por centro de custo ou agrupados por tipo de combustível." /></div>
+    <div className="no-print"><PageHead title="Relatório de abastecimentos" subtitle="Consulte abastecimentos por centro de custo, equipamento ou tipo de combustível." /></div>
     <section className="card no-print"><form method="get" className="form-grid">
-      <label className="field span-2">Tipo de relatório<select name="reportType" defaultValue={reportType}><option value="cost-center">Por centro de custo (detalhado)</option><option value="cost-center-summary">Por centro de custo (sucinto)</option><option value="fuel">Por combustível (detalhado)</option><option value="fuel-summary">Por combustível (sucinto)</option></select></label>
-      {isCostCenterReport ? <label className="field span-2">Centro de custo<select name="workId" defaultValue={selectedWork?.id || ""}><option value="">Selecione</option>{works.map((work) => <option key={work.id} value={work.id}>{work.code} — {work.name}</option>)}</select></label> : <label className="field span-2">Posto de combustível<select name="supplierId" defaultValue={selectedSupplier?.id || ""}><option value="">Todos os postos</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>}
-      <label className="field span-2">Competência<select name="competence" defaultValue={isFuelReport ? fuelCompetence : competence}><option value="">{isCostCenterReport && !selectedWork ? "Selecione primeiro o centro de custo" : "Selecione"}</option>{(isFuelReport ? fuelCompetences : availableCompetences).map((value) => <option key={value} value={value}>{competenceLabel(value)}</option>)}</select></label>
+      <label className="field span-2">Tipo de relatório<select name="reportType" defaultValue={reportType}><option value="cost-center">Por centro de custo (detalhado)</option><option value="cost-center-summary">Por centro de custo (sucinto)</option><option value="fuel">Por combustível (detalhado)</option><option value="fuel-summary">Por combustível (sucinto)</option><option value="equipment">Abastecimento de equipamentos</option></select></label>
+      {isCostCenterReport || isEquipmentReport ? <label className="field span-2">Centro de custo<select name="workId" defaultValue={selectedWork?.id || ""}><option value="">{isEquipmentReport ? "Todos os abastecimentos" : "Selecione"}</option>{works.map((work) => <option key={work.id} value={work.id}>{work.code} — {work.name}</option>)}</select></label> : <label className="field span-2">Posto de combustível<select name="supplierId" defaultValue={selectedSupplier?.id || ""}><option value="">Todos os postos</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label>}
+      {!isEquipmentReport && <label className="field span-2">Competência<select name="competence" defaultValue={isFuelReport ? fuelCompetence : competence}><option value="">{isCostCenterReport && !selectedWork ? "Selecione primeiro o centro de custo" : "Selecione"}</option>{(isFuelReport ? fuelCompetences : availableCompetences).map((value) => <option key={value} value={value}>{competenceLabel(value)}</option>)}</select></label>}
       <div className="form-actions"><button className="btn">{isCostCenterReport && !selectedWork ? "Carregar competências" : "Gerar relatório"}</button></div>
     </form></section>
+    {isEquipmentReport && <section className="report-sheet equipment-report"><div className="report-actions no-print"><PrintButton /></div><ReportHeader title="Relatório de abastecimento de equipamentos" />
+      <div className="report-meta"><strong>Centro de custo:</strong> {selectedWork ? `${selectedWork.code} — ${selectedWork.name}` : "Todos os abastecimentos"}</div>
+      {equipmentGroups.length === 0 ? <Empty>Nenhum abastecimento encontrado para o filtro selecionado.</Empty> : <>
+        {equipmentGroups.map((group) => <section className="equipment-group" key={group.id}>
+          <h2>Equipamento: {group.identifier} <small>— {group.description}</small></h2>
+          <div className="table-wrap"><table><thead><tr><th>Data</th><th>Origem</th><th>Cupom</th><th className="text-right">Litros</th><th className="text-right">Valor</th><th className="text-right">Hor/Km</th><th>Motorista/Operador</th></tr></thead><tbody>{group.rows.map((dispense) => <tr key={dispense.id}><td>{date(dispense.date)}</td><td>{dispenseOrigin(dispense)}</td><td>{dispense.document || "—"}</td><td className="text-right">{number(dispense.liters, 2)}</td><td className="text-right">{money(dispense.totalCost)}</td><td className="text-right">{dispense.meter === null ? "—" : number(dispense.meter, 2)}</td><td>{dispense.person?.name || "—"}</td></tr>)}</tbody><tfoot><tr><th colSpan={3}>Total — {group.identifier}</th><th className="text-right">{number(group.liters, 2)} L</th><th className="text-right">{money(group.total)}</th><th colSpan={2}></th></tr></tfoot></table></div>
+        </section>)}
+        <div className="equipment-grand-total"><span>Total geral</span><strong>{number(equipmentTotals.liters, 2)} L</strong><strong>{money(equipmentTotals.value)}</strong></div>
+      </>}
+      <p className="report-footer">Emitido em {date(new Date())}</p>
+    </section>}
     {reportType === "cost-center" && selectedWork && competence && <section className="report-sheet fuel-cost-report"><div className="report-actions no-print"><PrintButton /></div><ReportHeader title="Relatório de abastecimentos" />
       <div className="report-meta"><strong>Centro de custo:</strong> {selectedWork.code} — {selectedWork.name}<br /><strong>Competência:</strong> {competenceLabel(competence)}</div>
       {supplierGroups.length === 0 ? <Empty>Nenhum abastecimento direto em posto encontrado para o centro de custo e a competência selecionados.</Empty> : <>

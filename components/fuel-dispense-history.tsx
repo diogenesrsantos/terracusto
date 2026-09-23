@@ -19,7 +19,7 @@ export function FuelDispenseHistory({ dispenses, people }: { dispenses: Dispense
       <td>{row.work.code}</td><td>{number(row.liters, 3)}</td><td>{row.meter ? number(row.meter, 2) : "—"}</td>
       <td>{row.consumptionRate ? `${number(row.consumptionRate, 3)} ${row.asset.consumptionMetric === "LITERS_PER_HOUR" ? "L/h" : "km/L"}` : "Primeira referência"}</td>
       <td>{money(row.totalCost)}</td><td>{!row.reimbursable ? "Não reembolsável" : row.measurement ? `Medição ${row.measurement.number}` : "Pendente"}</td>
-      <td>{locked ? <small className="muted">Medição fechada</small> : <FuelDispenseEditor row={{ id: row.id, operationId: row.operationId, date: row.date.toISOString().slice(0, 10), liters: row.liters.toString(), meter: row.meter?.toString() || "", source: row.source, document: row.document || "", unitPrice: row.unitPrice?.toString() || "", paymentTerm: row.paymentTerm, dueDate: row.dueDate?.toISOString().slice(0, 10) || "", personId: row.personId || "", notes: row.notes || "" }} people={people} />}</td>
+      <td>{locked ? <small className="muted">Medição fechada</small> : <FuelDispenseEditor row={{ id: row.id, operationId: row.operationId, date: row.date.toISOString().slice(0, 10), liters: row.liters.toString(), meter: row.meter?.toString() || "", source: row.source, document: row.document || "", unitPrice: (row.unitPrice || row.unitCost).toString(), totalCost: row.totalCost.toString(), paymentTerm: row.paymentTerm, dueDate: row.dueDate?.toISOString().slice(0, 10) || "", personId: row.personId || "", notes: row.notes || "" }} people={people} />}</td>
     </tr>;
   })}</tbody></table></div>;
 }

@@ -12,6 +12,7 @@ type EditorDispense = {
   source: "INTERNAL_TANK" | "DIRECT_SUPPLIER";
   document: string;
   unitPrice: string;
+  totalCost: string;
   paymentTerm: "CASH" | "CREDIT" | null;
   dueDate: string;
   personId: string;
@@ -64,7 +65,10 @@ export function FuelDispenseEditor({ row, people }: { row: EditorDispense; peopl
             <label>Data<input type="date" name="date" defaultValue={row.date} required /></label>
             <label>Litros<input type="number" name="liters" min="0.001" step="0.001" defaultValue={row.liters} required /></label>
             <label>Horímetro/odômetro<input type="number" name="meter" min="0" step="0.01" defaultValue={row.meter} required /></label>
-            {row.source === "DIRECT_SUPPLIER" && <><label>Documento/cupom<input name="document" defaultValue={row.document} required /></label><label>Preço por litro<input type="number" name="unitPrice" min="0.0001" step="0.0001" defaultValue={row.unitPrice} required /></label>{row.paymentTerm === "CREDIT" && <label>Vencimento<input type="date" name="dueDate" defaultValue={row.dueDate} required /></label>}</>}
+            {row.source === "DIRECT_SUPPLIER" && <label>Documento/cupom<input name="document" defaultValue={row.document} required /></label>}
+            <label>Valor por litro<input type="number" name="unitPrice" min="0.0001" step="0.0001" defaultValue={row.unitPrice} required /></label>
+            <label>Valor total<input type="number" name="totalCost" min="0.01" step="0.01" defaultValue={row.totalCost} required /></label>
+            {row.source === "DIRECT_SUPPLIER" && row.paymentTerm === "CREDIT" && <label>Vencimento<input type="date" name="dueDate" defaultValue={row.dueDate} required /></label>}
             <label>Motorista/operador<select name="personId" defaultValue={row.personId}><option value="">Sem operador</option>{people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>
             <label className="editor-wide">Observação<input name="notes" defaultValue={row.notes} /></label>
             {error && <p className="error editor-wide" role="alert">{error}</p>}

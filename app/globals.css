@@ -175,6 +175,18 @@ tbody tr:hover { background: #f8faf8; }
 .fuel-summary-table th:nth-child(3), .fuel-summary-table th:nth-child(4) { width: 14%; }
 .fuel-summary-table th:nth-child(5) { width: 16%; }
 .fuel-summary-table th:nth-child(6) { width: 12%; }
+.equipment-group { margin-top: 1.5rem; break-inside: avoid; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.equipment-group h2 { margin: 0; padding: .6rem .75rem; color: white; background: var(--brand); font-size: .98rem; }
+.equipment-group h2 small { font-weight: 400; }
+.equipment-group .table-wrap { border: 0; border-radius: 0; }
+.equipment-group table { table-layout: fixed; font-size: .84rem; }
+.equipment-group th, .equipment-group td { padding: .45rem .4rem; }
+.equipment-group th:nth-child(1) { width: 11%; }
+.equipment-group th:nth-child(2) { width: 23%; }
+.equipment-group th:nth-child(3) { width: 12%; }
+.equipment-group th:nth-child(4), .equipment-group th:nth-child(5), .equipment-group th:nth-child(6) { width: 10%; }
+.equipment-group th:nth-child(7) { width: 24%; }
+.equipment-grand-total { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; padding: .8rem 1rem; border: 2px solid var(--ink); font-size: 1rem; }
 .fuel-supplier-group { margin-top: 1rem; break-before: auto; }
 .fuel-supplier-group > h2 { margin: 0; padding: .45rem .6rem; color: white; background: var(--brand); font-size: .92rem; }
 .fuel-asset-group { margin-top: .55rem; break-inside: avoid; border: 1px solid var(--line); }
@@ -256,6 +268,10 @@ tbody tr:hover { background: #f8faf8; }
   .fuel-report-group table { font-size: 8pt; }
   .fuel-summary-table { font-size: 9pt; }
   .fuel-summary-table th, .fuel-summary-table td { padding: 1.5mm 1.8mm; }
+  .equipment-group { margin-top: 3mm; }
+  .equipment-group table { font-size: 7.5pt; }
+  .equipment-group th, .equipment-group td { padding: 1mm 1.2mm; line-height: 1.05; }
+  .equipment-grand-total { margin-top: 3mm; padding: 1.5mm; }
   .fuel-cost-report .report-header { gap: 3mm; padding-bottom: 2mm; }
   .fuel-cost-report .report-meta { margin: 2mm 0 3mm; padding: 2mm; line-height: 1.2; }
   .fuel-cost-report .fuel-supplier-group { margin-top: 3mm; }
