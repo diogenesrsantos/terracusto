@@ -179,13 +179,14 @@ tbody tr:hover { background: #f8faf8; }
 .equipment-group h2 { margin: 0; padding: .6rem .75rem; color: white; background: var(--brand); font-size: .98rem; }
 .equipment-group h2 small { font-weight: 400; }
 .equipment-group .table-wrap { border: 0; border-radius: 0; }
-.equipment-group table { table-layout: fixed; font-size: .84rem; }
-.equipment-group th, .equipment-group td { padding: .45rem .4rem; }
-.equipment-group th:nth-child(1) { width: 11%; }
-.equipment-group th:nth-child(2) { width: 23%; }
-.equipment-group th:nth-child(3) { width: 12%; }
+.equipment-group table { width: 100%; table-layout: fixed; font-size: .8rem; }
+.equipment-group th, .equipment-group td { padding: .35rem .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.equipment-group th:nth-child(1) { width: 9%; }
+.equipment-group th:nth-child(2) { width: 17%; }
+.equipment-group th:nth-child(3) { width: 10%; }
 .equipment-group th:nth-child(4), .equipment-group th:nth-child(5), .equipment-group th:nth-child(6) { width: 10%; }
-.equipment-group th:nth-child(7) { width: 24%; }
+.equipment-group th:nth-child(7) { width: 12%; }
+.equipment-group th:nth-child(8) { width: 22%; }
 .equipment-grand-total { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; padding: .8rem 1rem; border: 2px solid var(--ink); font-size: 1rem; }
 .fuel-supplier-group { margin-top: 1rem; break-before: auto; }
 .fuel-supplier-group > h2 { margin: 0; padding: .45rem .6rem; color: white; background: var(--brand); font-size: .92rem; }

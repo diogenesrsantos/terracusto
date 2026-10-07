@@ -109,13 +109,17 @@ export default async function FuelDispenseReportPage({ searchParams }: { searchP
     orderBy: [{ asset: { identifier: "asc" } }, { date: "asc" }, { createdAt: "asc" }],
   }) : [];
   type EquipmentDispense = (typeof equipmentDispenses)[number];
-  type EquipmentGroup = { id: string; identifier: string; description: string; rows: EquipmentDispense[]; liters: number; total: number };
+  type EquipmentGroup = { id: string; identifier: string; description: string; unit: string | null; rows: EquipmentDispense[]; liters: number; total: number; consumptionTotal: number; consumptionCount: number };
   const equipmentMap = new Map<string, EquipmentGroup>();
   for (const dispense of equipmentDispenses) {
-    const group = equipmentMap.get(dispense.assetId) || { id: dispense.assetId, identifier: dispense.asset.identifier, description: dispense.asset.description, rows: [], liters: 0, total: 0 };
+    const group = equipmentMap.get(dispense.assetId) || { id: dispense.assetId, identifier: dispense.asset.identifier, description: dispense.asset.description, unit: dispense.asset.consumptionMetric === "LITERS_PER_HOUR" ? "L/h" : dispense.asset.consumptionMetric === "KM_PER_LITER" ? "Km/L" : null, rows: [], liters: 0, total: 0, consumptionTotal: 0, consumptionCount: 0 };
     group.rows.push(dispense);
     group.liters += Number(dispense.liters);
     group.total += Number(dispense.totalCost);
+    if (dispense.consumptionRate !== null) {
+      group.consumptionTotal += Number(dispense.consumptionRate);
+      group.consumptionCount += 1;
+    }
     equipmentMap.set(dispense.assetId, group);
   }
   const equipmentGroups = Array.from(equipmentMap.values());
@@ -135,7 +139,7 @@ export default async function FuelDispenseReportPage({ searchParams }: { searchP
       {equipmentGroups.length === 0 ? <Empty>Nenhum abastecimento encontrado para o filtro selecionado.</Empty> : <>
         {equipmentGroups.map((group) => <section className="equipment-group" key={group.id}>
           <h2>Equipamento: {group.identifier} <small>— {group.description}</small></h2>
-          <div className="table-wrap"><table><thead><tr><th>Data</th><th>Origem</th><th>Cupom</th><th className="text-right">Litros</th><th className="text-right">Valor</th><th className="text-right">Hor/Km</th><th>Motorista/Operador</th></tr></thead><tbody>{group.rows.map((dispense) => <tr key={dispense.id}><td>{date(dispense.date)}</td><td>{dispenseOrigin(dispense)}</td><td>{dispense.document || "—"}</td><td className="text-right">{number(dispense.liters, 2)}</td><td className="text-right">{money(dispense.totalCost)}</td><td className="text-right">{dispense.meter === null ? "—" : number(dispense.meter, 2)}</td><td>{dispense.person?.name || "—"}</td></tr>)}</tbody><tfoot><tr><th colSpan={3}>Total — {group.identifier}</th><th className="text-right">{number(group.liters, 2)} L</th><th className="text-right">{money(group.total)}</th><th colSpan={2}></th></tr></tfoot></table></div>
+          <div className="table-wrap"><table><thead><tr><th>Data</th><th>Origem</th><th>Cupom</th><th className="text-right">Litros</th><th className="text-right">Valor</th><th className="text-right">Hor/Km</th><th className="text-right">Média</th><th>Motorista/Operador</th></tr></thead><tbody>{group.rows.map((dispense) => <tr key={dispense.id}><td>{date(dispense.date)}</td><td>{dispenseOrigin(dispense)}</td><td>{dispense.document || "—"}</td><td className="text-right">{number(dispense.liters, 2)}</td><td className="text-right">{money(dispense.totalCost)}</td><td className="text-right">{dispense.meter === null ? "—" : number(dispense.meter, 2)}</td><td className="text-right">{dispense.consumptionRate === null || !group.unit ? "—" : `${number(dispense.consumptionRate, 3)} ${group.unit}`}</td><td>{dispense.person?.name || "—"}</td></tr>)}</tbody><tfoot><tr><th colSpan={3}>Total — {group.identifier}</th><th className="text-right">{number(group.liters, 2)} L</th><th className="text-right">{money(group.total)}</th><th className="text-right">—</th><th className="text-right">{group.consumptionCount ? `${number(group.consumptionTotal / group.consumptionCount, 3)} ${group.unit}` : "—"}</th><th></th></tr></tfoot></table></div>
         </section>)}
         <div className="equipment-grand-total"><span>Total geral</span><strong>{number(equipmentTotals.liters, 2)} L</strong><strong>{money(equipmentTotals.value)}</strong></div>
       </>}
