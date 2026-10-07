@@ -1,32 +1,17 @@
-import { createProduct, createStockMovement } from "@/app/actions";
+import Link from "next/link";
 import { Empty, PageHead } from "@/components/page";
+import { requirePermission } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { money, number } from "@/lib/format";
-import { requirePermission } from "@/lib/auth";
 
 export default async function StockPage() {
   await requirePermission("stock.manage");
-  const [products, works, movements] = await Promise.all([
-    db.product.findMany({ where: { active: true }, orderBy: { name: "asc" } }), db.work.findMany({ where: { active: true }, orderBy: { code: "asc" } }),
-    db.stockMovement.findMany({ include: { product: true, work: true }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 100 }),
-  ]);
-  const balances = await Promise.all(products.map(async (product) => {
-    const grouped = await db.stockMovement.groupBy({ by: ["kind"], where: { productId: product.id }, _sum: { quantity: true } });
-    return { ...product, balance: grouped.reduce((sum, r) => sum + (r.kind === "OUT" ? -1 : 1) * Number(r._sum.quantity || 0), 0) };
-  }));
-  return <><PageHead title="Almoxarifado" subtitle="Entrada por nota, requisições de saída e saldo dos produtos." />
-    <section className="grid grid-2"><div className="card"><h2>Novo produto</h2><form action={createProduct} className="form-grid">
-      <label className="field">Código<input name="code" required /></label><label className="field span-2">Descrição<input name="name" required /></label><label className="field">Unidade<input name="unit" placeholder="UN, L, KG" required /></label>
-      <label className="field span-3">Estoque mínimo<input name="minimum" type="number" min="0" step="0.001" defaultValue="0" /></label><button className="btn">Cadastrar</button>
-    </form></div><div className="card"><h2>Movimentar estoque</h2><form action={createStockMovement} className="form-grid">
-      <label className="field">Data<input name="date" type="date" required /></label><label className="field">Operação<select name="kind"><option value="IN">Entrada</option><option value="OUT">Saída/requisição</option><option value="ADJUSTMENT">Ajuste positivo</option></select></label>
-      <label className="field span-2">Produto<select name="productId" required><option value="">Selecione</option>{products.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}</select></label>
-      <label className="field">Quantidade<input name="quantity" type="number" step="0.001" min="0.001" required /></label><label className="field">Custo unitário<input name="unitCost" type="number" step="0.0001" /></label>
-      <label className="field">Nota/documento<input name="document" /></label><label className="field">Solicitante<input name="requester" /></label>
-      <label className="field span-2">Obra<select name="workId"><option value="">Sem vínculo</option>{works.map((w) => <option key={w.id} value={w.id}>{w.code} — {w.name}</option>)}</select></label>
-      <label className="field">Histórico<input name="history" required /></label><button className="btn">Registrar</button>
-    </form></div></section>
-    <section className="card mt"><h2>Posição do estoque</h2>{balances.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Código</th><th>Produto</th><th>Unidade</th><th>Estoque mínimo</th><th>Saldo</th><th>Situação</th><th>Ação</th></tr></thead><tbody>{balances.map((p) => <tr key={p.id}><td>{p.code}</td><td>{p.name}</td><td>{p.unit}</td><td>{number(p.minimum,3)}</td><td><strong>{number(p.balance,3)}</strong></td><td><span className={`badge ${p.balance <= Number(p.minimum) ? "warn" : ""}`}>{p.balance <= Number(p.minimum) ? "Repor" : "Normal"}</span></td><td><details><summary>Editar</summary><form action={createProduct} className="grid"><input type="hidden" name="id" value={p.id} /><input name="code" defaultValue={p.code} required /><input name="name" defaultValue={p.name} required /><input name="unit" defaultValue={p.unit} required /><input name="minimum" type="number" min="0" step="0.001" defaultValue={p.minimum.toString()} /><button className="btn">Salvar</button></form></details></td></tr>)}</tbody></table></div>}</section>
-    <section className="card mt"><h2>Últimas movimentações</h2>{movements.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Operação</th><th>Produto</th><th>Quantidade</th><th>Custo</th><th>Obra/solicitante</th><th>Histórico</th></tr></thead><tbody>{movements.map((m) => <tr key={m.id}><td>{m.date.toLocaleDateString("pt-BR", {timeZone:"UTC"})}</td><td>{m.kind === "IN" ? "Entrada" : m.kind === "OUT" ? "Saída" : "Ajuste"}</td><td>{m.product.name}</td><td>{number(m.quantity,3)} {m.product.unit}</td><td>{m.unitCost ? money(m.unitCost) : "—"}</td><td>{m.work?.code || "—"}<br /><small>{m.requester}</small></td><td>{m.history}</td></tr>)}</tbody></table></div>}</section>
+  const [products, grouped, recent] = await Promise.all([db.product.findMany({ where: { active: true }, include: { group: true }, orderBy: { number: "asc" } }), db.stockMovement.groupBy({ by: ["productId", "kind"], _sum: { quantity: true } }), db.stockMovement.findMany({ include: { product: true, work: true, createdBy: true }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 20 })]);
+  const balances = new Map<string, number>();
+  for (const row of grouped) balances.set(row.productId, (balances.get(row.productId) || 0) + (row.kind === "OUT" ? -1 : 1) * Number(row._sum.quantity || 0));
+  return <><PageHead title="Almoxarifado" subtitle="Posição atual, entradas, saídas e histórico de materiais." />
+    <section className="grid grid-3 stock-links"><Link className="card action-card" href="/almoxarifado/produtos"><h2>Cadastro de produtos</h2><p>Produtos, grupos, preços atuais e vencimento.</p></Link><Link className="card action-card" href="/almoxarifado/entradas"><h2>Entradas no estoque</h2><p>Entradas por nota fiscal e atualização de custo.</p></Link><Link className="card action-card" href="/almoxarifado/saidas"><h2>Saídas do estoque</h2><p>Lista temporária, conferência e baixa contábil.</p></Link></section>
+    <section className="card mt"><div className="list-head"><h2>Posição do estoque</h2><Link className="btn secondary" href="/almoxarifado/historico">Ver histórico completo</Link></div>{products.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Código</th><th>Produto</th><th>Grupo</th><th>Unidade</th><th>Mínimo</th><th>Saldo</th><th>Valor atual</th><th>Situação</th></tr></thead><tbody>{products.map((product) => { const balance = balances.get(product.id) || 0; return <tr key={product.id}><td>{product.number}</td><td>{product.name}</td><td>{product.group.name}</td><td>{product.unit}</td><td>{number(product.minimum, 0)}</td><td><strong>{number(balance, 0)}</strong></td><td>{product.currentUnitCost ? money(product.currentUnitCost) : "—"}</td><td><span className={`badge${balance <= Number(product.minimum) ? " warn" : ""}`}>{balance <= Number(product.minimum) ? "Repor" : "Normal"}</span></td></tr>; })}</tbody></table></div>}</section>
+    <section className="card mt"><h2>Últimos movimentos</h2>{recent.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Operação</th><th>Produto</th><th>Quantidade</th><th>Valor</th><th>Obra</th><th>Usuário</th></tr></thead><tbody>{recent.map((movement) => <tr key={movement.id}><td>{movement.date.toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td>{movement.kind === "IN" ? "Entrada" : movement.kind === "OUT" ? "Saída" : "Ajuste"}</td><td>{movement.product.number} — {movement.product.name}</td><td>{number(movement.quantity, 0)} {movement.product.unit}</td><td>{movement.unitCost ? money(movement.unitCost) : "—"}</td><td>{movement.work ? `${movement.work.code} — ${movement.work.name}` : "—"}</td><td>{movement.createdBy.name}</td></tr>)}</tbody></table></div>}</section>
   </>;
 }

@@ -18,6 +18,10 @@ export const HELP_PAGES = [
   { key: "/relatorios/fornecedores", label: "Relatório de fornecedores" },
   { key: "/relatorios/abastecimentos", label: "Relatório de abastecimentos" },
   { key: "/almoxarifado", label: "Almoxarifado" },
+  { key: "/almoxarifado/produtos", label: "Cadastro de produtos" },
+  { key: "/almoxarifado/entradas", label: "Entradas de estoque" },
+  { key: "/almoxarifado/saidas", label: "Saídas de estoque" },
+  { key: "/almoxarifado/historico", label: "Histórico de estoque" },
   { key: "/manutencao", label: "Manutenção" },
 ] as const;
 

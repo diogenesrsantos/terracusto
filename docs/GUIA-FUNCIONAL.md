@@ -25,7 +25,11 @@
 | `/combustivel/medicoes` | Medições de combustível | `fuel.manage` | Consolidação mensal dos custos reembolsáveis por obra |
 | `/relatorios/fornecedores` | Relatório de fornecedores | `fuel.manage` | Resumo geral e títulos detalhados por fornecedor |
 | `/relatorios/abastecimentos` | Relatório de abastecimentos | `fuel.manage` | Relatórios detalhados ou sucintos por centro de custo e por combustível, relatório detalhado por equipamento com origem posto/tanque, filtrados por competência quando aplicável |
-| `/almoxarifado` | Almoxarifado | `stock.manage` | Produtos, entradas, saídas e ajustes positivos |
+| `/almoxarifado` | Almoxarifado | `stock.manage` | Posição atual, atalhos operacionais e últimos movimentos |
+| `/almoxarifado/produtos` | Cadastro de produtos | `stock.manage` | CRUD de produtos, grupos, código automático e valor atual |
+| `/almoxarifado/entradas` | Entradas de estoque | `stock.manage` | Entradas por nota fiscal e histórico por usuário |
+| `/almoxarifado/saidas` | Saídas de estoque | `stock.manage` | Lista persistida, conferência e efetivação contábil em lote |
+| `/almoxarifado/historico` | Histórico de estoque | `stock.manage` | Movimentos e reabertura controlada de listas efetivadas |
 | `/manutencao` | Manutenção | `maintenance.manage` | Abertura e conclusão de ordens de serviço |
 | `/perfil` | Minha conta | Usuário autenticado | Troca de senha |
 
@@ -248,11 +252,24 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 
 ### Almoxarifado
 
-- Produtos possuem código único, unidade e estoque mínimo.
-- O saldo considera entradas e ajustes como positivos e saídas como negativas.
-- Uma saída não pode ultrapassar o saldo disponível.
-- O tipo `ADJUSTMENT` disponível na interface é sempre um ajuste positivo.
-- Movimentações podem ser vinculadas a obra, documento e solicitante.
+- Produtos recebem código numérico automático, têm nome único, grupo, unidade,
+  estoque mínimo, valor unitário atual e podem controlar vencimento. Produtos
+  utilizados são inativados em vez de removidos.
+- Entradas são registradas em tela própria, com nota fiscal, produto, usuário,
+  data, quantidade inteira, custo unitário e vencimento quando o produto exigir.
+  O custo informado passa a ser o valor atual do produto; preço menor que o
+  atual gera alerta, mas não bloqueia o registro.
+- Saídas são reunidas em uma Lista de baixa persistida por usuário. Ela tem data
+  única, itens editáveis, obra opcional ou conta de despesa e estados rascunho,
+  conferida, efetivada e cancelada.
+- A conferência e a efetivação recalculam o saldo no servidor. A efetivação usa
+  transação serializável, rejeita saldo negativo e cria movimentos, lançamento
+  contábil e linhas vinculados pelo mesmo identificador de operação.
+- Com obra, a baixa debita `4.3 — Materiais` e credita `1.4 — Estoque de
+  materiais`; sem obra, o usuário seleciona a conta analítica de despesa. A
+  alteração de uma lista efetivada reabre a operação, remove os movimentos e o
+  lançamento vinculados e permite nova conferência e efetivação, respeitando a
+  competência aberta da obra.
 
 ### Manutenção
 

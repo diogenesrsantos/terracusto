@@ -1,0 +1,11 @@
+import { reopenStockIssue } from "@/app/actions";
+import { Empty, PageHead } from "@/components/page";
+import { requirePermission } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { money, number } from "@/lib/format";
+
+export default async function StockHistoryPage() {
+  const user = await requirePermission("stock.manage");
+  const [movements, issues] = await Promise.all([db.stockMovement.findMany({ include: { product: true, work: true, createdBy: true }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 100 }), db.stockIssue.findMany({ where: { createdById: user.userId, status: "POSTED" }, include: { work: true, items: true }, orderBy: { date: "desc" }, take: 30 })]);
+  return <><PageHead title="Histórico de estoque" subtitle="Movimentos registrados e listas de baixa efetivadas." /><section className="card"><h2>Listas de baixa efetivadas</h2>{issues.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Lista</th><th>Data</th><th>Obra/conta</th><th>Itens</th><th>Total</th><th></th></tr></thead><tbody>{issues.map((issue) => { const total = issue.items.reduce((sum, item) => sum + Number(item.total), 0); return <tr key={issue.id}><td>#{issue.number}</td><td>{issue.date.toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td>{issue.work ? `${issue.work.code} — ${issue.work.name}` : "Despesa sem obra"}</td><td>{issue.items.length}</td><td>{money(total)}</td><td><form action={reopenStockIssue}><input type="hidden" name="id" value={issue.id} /><button className="btn secondary">Alterar</button></form></td></tr>; })}</tbody></table></div>}</section><section className="card mt"><h2>Últimos 100 movimentos</h2>{movements.length === 0 ? <Empty /> : <div className="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Quantidade</th><th>Documento</th><th>Usuário</th><th>Histórico</th></tr></thead><tbody>{movements.map((movement) => <tr key={movement.id}><td>{movement.date.toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td><td>{movement.kind === "IN" ? "Entrada" : movement.kind === "OUT" ? "Saída" : "Ajuste"}</td><td>{movement.product.number} — {movement.product.name}</td><td>{number(movement.quantity, 0)} {movement.product.unit}</td><td>{movement.document || "—"}</td><td>{movement.createdBy.name}</td><td>{movement.history}</td></tr>)}</tbody></table></div>}</section></>;
+}

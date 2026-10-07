@@ -29,6 +29,13 @@ enum StockMovementKind {
   ADJUSTMENT
 }
 
+enum StockIssueStatus {
+  DRAFT
+  CHECKED
+  POSTED
+  CANCELED
+}
+
 enum MaintenanceKind {
   PREVENTIVE
   CORRECTIVE
@@ -128,6 +135,8 @@ model User {
   active       Boolean    @default(true)
   personId     String?    @unique
   person       Person?    @relation(fields: [personId], references: [id])
+  stockMovements StockMovement[] @relation("StockMovementCreator")
+  stockIssues    StockIssue[]    @relation("StockIssueCreator")
   roles        UserRole[]
   auditLogs    AuditLog[]
   createdAt    DateTime   @default(now())
@@ -237,6 +246,7 @@ model Work {
   purchases    FuelPurchase[]
   dispenses    FuelDispense[]
   stockMoves   StockMovement[]
+  stockIssues  StockIssue[]
   maintenance  MaintenanceOrder[]
   measurements FuelMeasurement[]
 
@@ -301,6 +311,7 @@ model Account {
   closings           MonthlyClosing[]
   defaultDebitTypes  EntryType[]      @relation("EntryTypeDebitAccount")
   defaultCreditTypes EntryType[]      @relation("EntryTypeCreditAccount")
+  stockIssues       StockIssue[]     @relation("StockIssueDebitAccount")
 }
 
 model EntryType {
@@ -353,6 +364,7 @@ model AccountingEntry {
   fuelDispense        FuelDispense?
   supplierLedgerEntry SupplierLedgerEntry?
   fuelMeasurement     FuelMeasurement?
+  stockIssue          StockIssue?
 
   @@index([workId, competence, status])
   @@index([entryTypeId])
@@ -574,13 +586,33 @@ model FuelMeasurement {
 
 model Product {
   id               String            @id @default(cuid())
-  code             String            @unique
+  number           Int               @unique @default(autoincrement())
+  code             String?           @unique
   name             String
+  nameNormalized   String            @unique
   unit             String
   minimum          Decimal           @default(0) @db.Decimal(14, 3)
+  currentUnitCost  Decimal?          @db.Decimal(14, 4)
+  requiresExpiry   Boolean           @default(false)
+  groupId          String
   active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  group            ProductGroup      @relation(fields: [groupId], references: [id])
   movements        StockMovement[]
+  issueItems       StockIssueItem[]
   maintenanceParts MaintenancePart[]
+
+  @@index([groupId, active])
+}
+
+model ProductGroup {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
 }
 
 model StockMovement {
@@ -589,17 +621,62 @@ model StockMovement {
   kind        StockMovementKind
   quantity    Decimal           @db.Decimal(14, 3)
   unitCost    Decimal?          @db.Decimal(14, 4)
+  expirationDate DateTime?
   document    String?
   requester   String?
   history     String
   productId   String
   workId      String?
   createdById String
+  operationId String?
+  issueItemId String?           @unique
   createdAt   DateTime          @default(now())
   product     Product           @relation(fields: [productId], references: [id])
   work        Work?             @relation(fields: [workId], references: [id])
+  createdBy   User              @relation("StockMovementCreator", fields: [createdById], references: [id])
+  issueItem   StockIssueItem?   @relation(fields: [issueItemId], references: [id])
 
   @@index([productId, date])
+  @@index([operationId])
+}
+
+model StockIssue {
+  id                   String           @id @default(cuid())
+  number               Int              @unique @default(autoincrement())
+  operationId          String           @unique @default(cuid())
+  date                 DateTime
+  status               StockIssueStatus @default(DRAFT)
+  workId               String?
+  debitAccountId       String?
+  entryId              String?          @unique
+  createdById          String
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  work                 Work?            @relation(fields: [workId], references: [id])
+  debitAccount         Account?         @relation("StockIssueDebitAccount", fields: [debitAccountId], references: [id])
+  entry                AccountingEntry? @relation(fields: [entryId], references: [id])
+  createdBy            User             @relation("StockIssueCreator", fields: [createdById], references: [id])
+  items                StockIssueItem[]
+
+  @@index([createdById, status])
+  @@index([workId, date])
+}
+
+model StockIssueItem {
+  id          String       @id @default(cuid())
+  issueId     String
+  productId   String
+  quantity    Decimal      @db.Decimal(14, 3)
+  unitCost    Decimal      @db.Decimal(14, 4)
+  total       Decimal      @db.Decimal(14, 2)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  issue       StockIssue   @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  product     Product      @relation(fields: [productId], references: [id])
+  movement    StockMovement?
+
+  @@unique([issueId, productId])
+  @@index([productId])
 }
 
 model MaintenanceOrder {

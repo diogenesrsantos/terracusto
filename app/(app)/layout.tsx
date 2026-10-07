@@ -30,6 +30,10 @@ const groups = [
     ["fuel.manage", "/combustivel/compras", "Compras"], ["fuel.manage", "/combustivel/abastecimentos", "Abastecimentos"],
     ["fuel.manage", "/combustivel/medicoes", "Medições de combustível"],
     ["stock.manage", "/almoxarifado", "Almoxarifado"],
+    ["stock.manage", "/almoxarifado/produtos", "Produtos"],
+    ["stock.manage", "/almoxarifado/entradas", "Entradas de estoque"],
+    ["stock.manage", "/almoxarifado/saidas", "Saídas de estoque"],
+    ["stock.manage", "/almoxarifado/historico", "Histórico de estoque"],
     ["maintenance.manage", "/manutencao", "Manutenção"],
   ] },
 ] as const;

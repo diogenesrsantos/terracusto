@@ -25,6 +25,7 @@ const accounts = [
   ["1.1", "Caixa e bancos", AccountNature.DEBIT, true],
   ["1.2", "Clientes", AccountNature.DEBIT, true],
   ["1.3", "Estoque de combustível", AccountNature.DEBIT, true],
+  ["1.4", "Estoque de materiais", AccountNature.DEBIT, true],
   ["2", "Passivo", AccountNature.CREDIT, false],
   ["2.1", "Fornecedores", AccountNature.CREDIT, true],
   ["3", "Receitas", AccountNature.CREDIT, false],
@@ -91,6 +92,7 @@ async function main() {
   for (const name of ["Máquina", "Veículo", "Ferramenta", "Outro"]) {
     await db.equipmentType.upsert({ where: { name }, update: { active: true }, create: { name } });
   }
+  await db.productGroup.upsert({ where: { name: "Sem grupo" }, update: { active: true }, create: { name: "Sem grupo" } });
 
   const entryTypes = [
     ["Serviço de máquinas", "1.2", "3.1.1", true, true, false],

@@ -1,7 +1,7 @@
 "use server";
 
 import { compare, hash } from "bcryptjs";
-import { Prisma, StockMovementKind } from "@prisma/client";
+import { Prisma, StockIssueStatus, StockMovementKind } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -1112,29 +1112,172 @@ export async function cancelFuelMeasurement(form: FormData) {
   revalidatePath("/combustivel/medicoes");
 }
 
-export async function createProduct(form: FormData) {
+const stockPaths = () => ["/almoxarifado", "/almoxarifado/produtos", "/almoxarifado/entradas", "/almoxarifado/saidas", "/almoxarifado/historico"].forEach((path) => revalidatePath(path));
+const normalizeProductName = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR");
+const requireWholeQuantity = (value: Prisma.Decimal) => {
+  if (value.lte(0) || !value.isInteger()) throw new Error("Informe uma quantidade inteira maior que zero.");
+};
+const stockBalance = async (client: Prisma.TransactionClient | typeof db, productId: string) => {
+  const rows = await client.stockMovement.groupBy({ by: ["kind"], where: { productId }, _sum: { quantity: true } });
+  return rows.reduce((sum, row) => sum.plus(row.kind === "OUT" ? -(row._sum.quantity?.toNumber() || 0) : (row._sum.quantity?.toNumber() || 0)), new Prisma.Decimal(0));
+};
+
+export async function saveProductGroup(form: FormData) {
   const user = await requirePermission("stock.manage");
-  const id = optional(form, "id");
-  const data = { code: text(form, "code").toUpperCase(), name: text(form, "name"), unit: text(form, "unit"), minimum: decimal(form, "minimum") };
-  const row = id ? await db.product.update({ where: { id }, data }) : await db.product.create({ data });
-  await audit(user.userId, id ? "UPDATE" : "CREATE", "Product", row.id); revalidatePath("/almoxarifado");
+  const id = optional(form, "id"), name = text(form, "name");
+  if (!name) throw new Error("Informe o nome do grupo.");
+  const row = id ? await db.productGroup.update({ where: { id }, data: { name, active: text(form, "active") === "true" } }) : await db.productGroup.create({ data: { name } });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "ProductGroup", row.id); stockPaths();
+  return { id: row.id, name: row.name, active: row.active };
 }
 
-export async function createStockMovement(form: FormData) {
-  const user = await requirePermission("stock.manage"); const productId = text(form, "productId");
-  const kind = text(form, "kind") as StockMovementKind; const quantity = decimal(form, "quantity");
-  if (quantity.lte(0)) throw new Error("Quantidade inválida.");
-  if (kind === "OUT") {
-    const rows = await db.stockMovement.groupBy({ by: ["kind"], where: { productId }, _sum: { quantity: true } });
-    const balance = rows.reduce((sum, row) => sum + (row.kind === "OUT" ? -1 : 1) * Number(row._sum.quantity || 0), 0);
-    if (Number(quantity) > balance) throw new Error("Estoque insuficiente.");
+export async function deleteProductGroup(form: FormData) {
+  const user = await requirePermission("stock.manage"); const id = text(form, "id");
+  const used = await db.product.count({ where: { groupId: id } });
+  if (used) await db.productGroup.update({ where: { id }, data: { active: false } }); else await db.productGroup.delete({ where: { id } });
+  await audit(user.userId, used ? "DEACTIVATE" : "DELETE", "ProductGroup", id); stockPaths();
+}
+
+export async function saveProduct(form: FormData) {
+  const user = await requirePermission("stock.manage");
+  const id = optional(form, "id"), name = text(form, "name"), nameNormalized = normalizeProductName(name);
+  const unit = text(form, "unit").toUpperCase(), groupId = text(form, "groupId");
+  if (!name || !unit || !groupId) throw new Error("Informe nome, grupo e unidade do produto.");
+  if (decimal(form, "minimum").lt(0)) throw new Error("O estoque mínimo não pode ser negativo.");
+  const duplicate = await db.product.findFirst({ where: { nameNormalized, ...(id ? { id: { not: id } } : {}) }, select: { id: true, number: true } });
+  if (duplicate) throw new Error(`Já existe o produto de código ${duplicate.number} com este nome.`);
+  const group = await db.productGroup.findFirst({ where: { id: groupId, active: true }, select: { id: true } });
+  if (!group) throw new Error("Selecione um grupo ativo.");
+  const costText = text(form, "currentUnitCost");
+  const data = { name, nameNormalized, unit, groupId, minimum: decimal(form, "minimum"), currentUnitCost: costText ? decimal(form, "currentUnitCost") : null, requiresExpiry: text(form, "requiresExpiry") === "true", active: id ? text(form, "active") === "true" : true };
+  const row = id ? await db.product.update({ where: { id }, data }) : await db.product.create({ data });
+  await audit(user.userId, id ? "UPDATE" : "CREATE", "Product", row.id); stockPaths();
+  return { id: row.id, number: row.number, name: row.name, unit: row.unit, requiresExpiry: row.requiresExpiry, currentUnitCost: row.currentUnitCost?.toString() || "" };
+}
+
+export async function deleteProduct(form: FormData) {
+  const user = await requirePermission("stock.manage"); const id = text(form, "id");
+  const product = await db.product.findUniqueOrThrow({ where: { id }, include: { _count: { select: { movements: true, issueItems: true, maintenanceParts: true } } } });
+  const used = product._count.movements + product._count.issueItems + product._count.maintenanceParts > 0;
+  if (used) await db.product.update({ where: { id }, data: { active: false } }); else await db.product.delete({ where: { id } });
+  await audit(user.userId, used ? "DEACTIVATE" : "DELETE", "Product", id); stockPaths();
+}
+
+export async function searchStockProducts(query: string, requestedPage = 1, includeInactive = false) {
+  await requirePermission("stock.manage");
+  const term = query.trim(), number = /^\d+$/.test(term) ? Number(term) : undefined, pageSize = 10;
+  const where = { ...(includeInactive ? {} : { active: true }), ...(term ? { OR: [{ name: { contains: term, mode: "insensitive" as const } }, { code: { contains: term, mode: "insensitive" as const } }, ...(number ? [{ number }] : [])] } : {}) };
+  const total = await db.product.count({ where }); const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(Number.isFinite(requestedPage) ? requestedPage : 1, 1), totalPages);
+  const products = await db.product.findMany({ where, orderBy: [{ number: "asc" }], skip: (page - 1) * pageSize, take: pageSize });
+  const balances = await Promise.all(products.map((product) => stockBalance(db, product.id)));
+  return { page, totalPages, total, products: products.map((product, index) => ({ id: product.id, number: product.number, name: product.name, unit: product.unit, active: product.active, requiresExpiry: product.requiresExpiry, currentUnitCost: product.currentUnitCost?.toString() || "", balance: balances[index].toString() })) };
+}
+
+export async function createStockEntry(form: FormData) {
+  const user = await requirePermission("stock.manage");
+  const productId = text(form, "productId"), quantity = decimal(form, "quantity"), unitCost = decimal(form, "unitCost"), date = when(form, "date");
+  requireWholeQuantity(quantity);
+  if (unitCost.lt(0)) throw new Error("O valor unitário não pode ser negativo.");
+  const result = await db.$transaction(async (tx) => {
+    const product = await tx.product.findFirst({ where: { id: productId, active: true }, select: { id: true, requiresExpiry: true } });
+    if (!product) throw new Error("Selecione um produto ativo.");
+    const expirationText = text(form, "expirationDate");
+    if (product.requiresExpiry && !expirationText) throw new Error("Informe a validade deste produto.");
+    const movement = await tx.stockMovement.create({ data: { date, kind: StockMovementKind.IN, quantity, unitCost, expirationDate: expirationText ? when(form, "expirationDate") : null, document: optional(form, "document"), history: `Entrada de estoque${optional(form, "document") ? ` — nota ${optional(form, "document")}` : ""}`, productId, createdById: user.userId } });
+    await tx.product.update({ where: { id: productId }, data: { currentUnitCost: unitCost } });
+    return movement;
+  });
+  await audit(user.userId, "CREATE", "StockMovement", result.id, { kind: "IN" }); stockPaths();
+}
+
+export async function saveStockIssueDraft(form: FormData) {
+  const user = await requirePermission("stock.manage"); const id = optional(form, "id"), date = when(form, "date"), workId = optional(form, "workId"), debitAccountId = optional(form, "debitAccountId");
+  if (workId && debitAccountId) throw new Error("Escolha uma obra ou uma conta de despesa, não ambos.");
+  if (workId && !(await db.work.count({ where: { id: workId, active: true } }))) throw new Error("Selecione uma obra ativa.");
+  if (debitAccountId && !(await db.account.count({ where: { id: debitAccountId, active: true, analytic: true, nature: "DEBIT" } }))) throw new Error("Selecione uma conta de despesa analítica ativa.");
+  const row = id ? await db.stockIssue.update({ where: { id, createdById: user.userId, status: { in: [StockIssueStatus.DRAFT, StockIssueStatus.CHECKED] } }, data: { date, workId, debitAccountId, status: StockIssueStatus.DRAFT } }) : await db.stockIssue.create({ data: { operationId: randomUUID(), date, workId, debitAccountId, createdById: user.userId } });
+  stockPaths(); return { id: row.id, number: row.number, operationId: row.operationId };
+}
+
+async function ownedDraft(userId: string, id: string) {
+  const issue = await db.stockIssue.findFirst({ where: { id, createdById: userId, status: { in: [StockIssueStatus.DRAFT, StockIssueStatus.CHECKED] } } });
+  if (!issue) throw new Error("A lista não está disponível para alteração.");
+  return issue;
+}
+
+export async function saveStockIssueItem(form: FormData) {
+  const user = await requirePermission("stock.manage"); const id = optional(form, "id"), issueId = text(form, "issueId"), productId = text(form, "productId");
+  const quantity = decimal(form, "quantity"), unitCost = decimal(form, "unitCost"); requireWholeQuantity(quantity);
+  if (unitCost.lt(0)) throw new Error("O valor unitário não pode ser negativo.");
+  await ownedDraft(user.userId, issueId);
+  const [product, balance] = await Promise.all([db.product.findFirst({ where: { id: productId, active: true }, select: { id: true } }), stockBalance(db, productId)]);
+  if (!product) throw new Error("Selecione um produto ativo.");
+  if (balance.lte(0)) throw new Error("Não é possível baixar um produto sem saldo em estoque.");
+  const total = quantity.mul(unitCost).toDecimalPlaces(2);
+  const row = id ? await db.stockIssueItem.update({ where: { id, issueId }, data: { productId, quantity, unitCost, total } }) : await db.stockIssueItem.create({ data: { issueId, productId, quantity, unitCost, total } });
+  await db.stockIssue.update({ where: { id: issueId }, data: { status: StockIssueStatus.DRAFT } }); stockPaths();
+  return { id: row.id };
+}
+
+export async function deleteStockIssueItem(form: FormData) {
+  const user = await requirePermission("stock.manage"); const id = text(form, "id"), issueId = text(form, "issueId");
+  await ownedDraft(user.userId, issueId); await db.stockIssueItem.delete({ where: { id, issueId } });
+  await db.stockIssue.update({ where: { id: issueId }, data: { status: StockIssueStatus.DRAFT } }); stockPaths();
+}
+
+async function stockIssueErrors(issueId: string) {
+  const issue = await db.stockIssue.findUniqueOrThrow({ where: { id: issueId }, include: { items: { include: { product: true } } } });
+  const errors: Record<string, string> = {};
+  for (const item of issue.items) {
+    const balance = await stockBalance(db, item.productId);
+    if (balance.lt(item.quantity)) errors[item.id] = `Saldo insuficiente: disponível ${balance.toString()} ${item.product.unit}.`;
   }
-  const row = await db.stockMovement.create({ data: {
-    date: when(form, "date"), kind, quantity, unitCost: text(form, "unitCost") ? decimal(form, "unitCost") : null,
-    document: optional(form, "document"), requester: optional(form, "requester"), history: text(form, "history"),
-    productId, workId: optional(form, "workId"), createdById: user.userId,
-  }});
-  await audit(user.userId, "CREATE", "StockMovement", row.id); revalidatePath("/almoxarifado");
+  return errors;
+}
+
+export async function checkStockIssue(issueId: string) {
+  const user = await requirePermission("stock.manage"); await ownedDraft(user.userId, issueId);
+  const errors = await stockIssueErrors(issueId);
+  await db.stockIssue.update({ where: { id: issueId }, data: { status: Object.keys(errors).length ? StockIssueStatus.DRAFT : StockIssueStatus.CHECKED } });
+  return errors;
+}
+
+export async function postStockIssue(issueId: string) {
+  const user = await requirePermission("stock.manage");
+  const preliminary = await db.stockIssue.findFirst({ where: { id: issueId, createdById: user.userId, status: { in: [StockIssueStatus.DRAFT, StockIssueStatus.CHECKED] } }, select: { workId: true, date: true } });
+  if (!preliminary) throw new Error("A lista não está disponível para efetivação.");
+  const competence = preliminary.workId ? await assertOpen(preliminary.workId, preliminary.date) : monthStart(preliminary.date);
+  await db.$transaction(async (tx) => {
+    const issue = await tx.stockIssue.findFirstOrThrow({ where: { id: issueId, createdById: user.userId, status: { in: [StockIssueStatus.DRAFT, StockIssueStatus.CHECKED] } }, include: { items: { include: { product: true } } } });
+    if (!issue.items.length) throw new Error("Inclua ao menos um item na lista de baixa.");
+    const debitAccountId = issue.workId ? (await tx.account.findUnique({ where: { code: "4.3" } }))?.id : issue.debitAccountId;
+    const creditAccountId = (await tx.account.findUnique({ where: { code: "1.4" } }))?.id;
+    if (!debitAccountId || !creditAccountId) throw new Error("Configure as contas 4.3 — Materiais e 1.4 — Estoque de materiais.");
+    if (!issue.workId && !(await tx.account.count({ where: { id: debitAccountId, active: true, analytic: true, nature: "DEBIT" } }))) throw new Error("Selecione uma conta de despesa analítica ativa.");
+    for (const item of issue.items) {
+      const balance = await stockBalance(tx, item.productId);
+      if (balance.lt(item.quantity)) throw new Error(`Estoque insuficiente para ${item.product.name}.`);
+    }
+    const total = issue.items.reduce((sum, item) => sum.plus(item.total), new Prisma.Decimal(0));
+    const entry = await tx.accountingEntry.create({ data: { operationId: issue.operationId, date: issue.date, competence, history: `Baixa de estoque nº ${issue.number}`, document: `EST-${issue.number}`, workId: issue.workId, createdById: user.userId, lines: { create: [{ operationId: issue.operationId, accountId: debitAccountId, debit: total, credit: 0 }, { operationId: issue.operationId, accountId: creditAccountId, debit: 0, credit: total }] } } });
+    for (const item of issue.items) await tx.stockMovement.create({ data: { date: issue.date, kind: StockMovementKind.OUT, quantity: item.quantity, unitCost: item.unitCost, document: `EST-${issue.number}`, history: `Baixa de estoque nº ${issue.number}`, productId: item.productId, workId: issue.workId, createdById: user.userId, operationId: issue.operationId, issueItemId: item.id } });
+    await tx.stockIssue.update({ where: { id: issue.id }, data: { status: StockIssueStatus.POSTED, entryId: entry.id } });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  await audit(user.userId, "POST", "StockIssue", issueId); stockPaths();
+}
+
+export async function reopenStockIssue(form: FormData) {
+  const user = await requirePermission("stock.manage"); const id = text(form, "id");
+  const issue = await db.stockIssue.findFirstOrThrow({ where: { id, createdById: user.userId, status: StockIssueStatus.POSTED }, select: { id: true, workId: true, date: true, entryId: true, operationId: true } });
+  if (issue.workId) await assertOpen(issue.workId, issue.date);
+  await db.$transaction(async (tx) => {
+    await tx.stockMovement.deleteMany({ where: { operationId: issue.operationId } });
+    if (issue.entryId) await tx.accountingEntry.delete({ where: { id: issue.entryId } });
+    await tx.stockIssue.update({ where: { id }, data: { status: StockIssueStatus.DRAFT, entryId: null } });
+  });
+  await audit(user.userId, "REOPEN", "StockIssue", id); stockPaths();
+  redirect("/almoxarifado/saidas");
 }
 
 export async function createMaintenance(form: FormData) {
@@ -1154,7 +1297,7 @@ export async function finishMaintenance(form: FormData) {
     quantity: text(form, `partQuantity${index}`) ? decimal(form, `partQuantity${index}`) : null,
     unitCost: text(form, `partUnitCost${index}`) ? decimal(form, `partUnitCost${index}`) : new Prisma.Decimal(0),
   })).filter((part) => part.productId || part.quantity);
-  if (parts.some((part) => !part.productId || !part.quantity || part.quantity.lte(0))) throw new Error("Preencha corretamente todas as peças informadas.");
+  if (parts.some((part) => !part.productId || !part.quantity || part.quantity.lte(0) || !part.quantity.isInteger())) throw new Error("Informe produtos e quantidades inteiras válidas.");
   await db.$transaction(async (tx) => {
     const order = await tx.maintenanceOrder.findUnique({ where: { id }, select: { id: true, status: true, workId: true } });
     if (!order || order.status === "DONE") throw new Error("Esta ordem já foi concluída.");
