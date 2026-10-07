@@ -1,5 +1,26 @@
 # Estado atual
 
+## Publicação do Almoxarifado em 07/10/2026
+
+Foi publicada na VPS a reestruturação do Almoxarifado, baseada no commit
+`28d4c72` (`feat: reestrutura almoxarifado`). A entrega separa a posição do
+estoque das telas de Produtos, Entradas, Saídas e Histórico. Produtos recebem
+código numérico automático, grupo, valor atual e controle opcional de validade;
+as saídas usam listas persistidas, conferência de saldo e lançamento contábil
+vinculado por identificador de operação.
+
+A migration `20261007120000_restructure_stock_warehouse` foi aplicada após o
+backup `terracusto-20261007-151945.dump`, validado com `pg_restore --list`.
+O banco passou a registrar 20 migrations sem pendências. Também foi preservada
+a cópia pré-publicação do código em
+`/var/backups/terracusto/terracusto-source-20261007-pre-almoxarifado.tar.gz`.
+
+Na VPS, `npm ci` e o build de produção foram concluídos; o serviço foi
+reiniciado e permaneceu ativo. O health check retornou aplicação e banco `ok`,
+o domínio HTTPS respondeu HTTP 307 para `/login`, o Nginx passou na validação e
+o timer de backup permaneceu ativo. O smoke autenticado não foi executado por
+depender de uma credencial administrativa atualizada.
+
 ## Atualização do checkout em 18/09/2026
 
 O checkout local está limpo e alinhado com a origem na branch
