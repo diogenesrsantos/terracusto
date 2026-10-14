@@ -1,6 +1,42 @@
 # Estado atual
 
-## Evolução local da manutenção em 14/10/2026 — publicação pendente
+## Publicação da manutenção em 14/10/2026
+
+O commit `f1d0fe1` foi enviado à origem na branch
+`chore/documentacao-sistema-20260829` e publicado na VPS. A migration
+`20261014120000_maintenance_workflows` foi aplicada com sucesso; o banco possui
+21 migrations concluídas, sem pendências. Foram confirmados o tipo ativo
+Reembolso de Manutenção, débito 1.2 — Clientes e crédito 3.2.3 — Reembolso de
+Manutenção. A ordem legada foi preservada sem lançamento retroativo.
+
+Backup de banco: `/var/backups/terracusto/terracusto-20261014-pre-maintenance.dump`
+(741 KB), validado com `pg_restore --list`. Backup de código:
+`/var/backups/terracusto/terracusto-source-20261014-pre-maintenance.tar.gz`.
+A aplicação anterior foi preservada em
+`/var/www/terracusto-previous-20261014-maintenance`.
+
+O typecheck passou na VPS após `npm ci --include=dev`. A compilação remota
+pressionou a memória/swap e foi encerrada antes da migration; a publicação usou
+o build local já aprovado, de mesmo código e dependências, em Linux x86_64 e
+Node.js 22. O artefato `.next` sem cache tem SHA-256
+`331d8daf33502464894738c2031d72585e11fd217d6ffef0843391636f9535d2`.
+O pacote de código tem SHA-256
+`ae812df52dcce1914e31aee467b69abddfc38f682fc898a2f96bf1ed86b3d374`.
+Ambos foram conferidos na VPS antes da instalação. O marcador
+`/var/www/terracusto/DEPLOYED_COMMIT` registra `f1d0fe1`.
+
+Após a troca, serviço e timer de backup ativos, health check de aplicação/banco
+`ok`, HTTPS de manutenção HTTP 307 para login sem sessão e Nginx válido.
+Consultas HTTP autenticadas de leitura (sessão temporária assinada, sem mudar
+credenciais ou gravar operações) passaram para listagem, todos os filtros,
+detalhes da ordem existente, relatório e tipo de lançamento. O login por senha
+e novas operações financeiras não foram executados em produção.
+
+O disco ficou com aproximadamente 335 MB livres. Backups e versão anterior
+foram mantidos; somente o cache temporário criado para instalar dependências
+foi limpo. Há necessidade de liberar espaço antes de outra publicação.
+
+## Implementação da manutenção em 14/10/2026
 
 Implementados edição/exclusão/fechamento de ordens abertas, listas de peças e
 serviços, baixa imediata de almoxarifado com devolução na remoção/exclusão,
@@ -19,7 +55,7 @@ detalhes, relatório e centro de custos, além do redirecionamento sem sessão.
 `npm run test:maintenance` exige base temporária em `127.0.0.1:18432`, com fixtures
 legadas e a nova migration aplicada; não aponta para produção.
 
-Nenhuma migration ou alteração foi aplicada à VPS nesta implementação.
+A publicação desta implementação está registrada acima.
 
 ## Publicação do Almoxarifado em 07/10/2026
 

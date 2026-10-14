@@ -29,7 +29,7 @@ diff com a versão ativa da VPS para não sobrescrever ajustes operacionais.
 5. Crie `/etc/terracusto.env` com `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`,
    `ADMIN_PASSWORD` e `NEXT_PUBLIC_APP_URL`.
 6. Proteja os segredos com `chmod 600 /etc/terracusto.env`.
-7. Execute `npm ci`, `npx prisma migrate deploy`, `npm run db:seed` e
+7. Execute `npm ci --include=dev`, `npx prisma migrate deploy`, `npm run db:seed` e
    `npm run build` como usuário da aplicação.
 8. Instale e habilite `terracusto.service`.
 9. Instale a configuração Nginx, valide com `nginx -t` e recarregue o serviço.
@@ -46,7 +46,7 @@ houver alteração de schema, gere o backup antes de qualquer migration.
 1. Valide localmente com `npm run typecheck` e `npm run build`.
 2. Sincronize o código sem `.env`, `.git`, `node_modules`, `.next`, dumps ou
    arquivos de credenciais.
-3. Na VPS, dentro de `/var/www/terracusto`, execute `npm ci`.
+3. Na VPS, dentro de `/var/www/terracusto`, execute `npm ci --include=dev`.
 4. Execute `npx prisma migrate deploy`.
 5. Execute `npm run build`.
 6. Reinicie `terracusto.service`.
@@ -55,6 +55,11 @@ houver alteração de schema, gere o backup antes de qualquer migration.
 
 Não use `prisma db push` em produção. O seed é idempotente, mas só deve ser
 executado em produção quando houver intenção de atualizar dados iniciais.
+
+Inclua dependências de desenvolvimento durante a preparação do build, mesmo
+com `NODE_ENV=production`: o typecheck precisa de TypeScript e `@types/*`.
+Sempre que possível, prepare e valide a release em um diretório separado antes
+da troca para evitar servir um build parcialmente atualizado.
 
 ## Validação pós-deploy
 
