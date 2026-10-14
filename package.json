@@ -9,6 +9,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "smoke": "node scripts/smoke.mjs",
+    "test:maintenance": "node scripts/test-maintenance.mjs",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts"

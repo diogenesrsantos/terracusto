@@ -1,5 +1,26 @@
 # Estado atual
 
+## Evolução local da manutenção em 14/10/2026 — publicação pendente
+
+Implementados edição/exclusão/fechamento de ordens abertas, listas de peças e
+serviços, baixa imediata de almoxarifado com devolução na remoção/exclusão,
+peças de fornecedor com nota fiscal, resultado do fechamento, lançamento
+automático de reembolso para obra, relatório imprimível e filtros paginados.
+Migration: `20261014120000_maintenance_workflows`. Cria conta 3.2.3 — Reembolso
+de Manutenção e tipo com débito 1.2 — Clientes. Preserva ordens antigas sem
+contabilização retroativa.
+
+Validações locais: schema Prisma, TypeScript, build e testes de integração em
+PostgreSQL descartável. Os testes usam as ações reais, substituindo somente o
+contexto de autenticação/revalidação do Next.js, e cobrem legado, baixa/devolução,
+fornecedor, serviços, fechamento balanceado, competência fechada e concorrência.
+Verificação HTTP autenticada do build local aprovada para listagem, filtros,
+detalhes, relatório e centro de custos, além do redirecionamento sem sessão.
+`npm run test:maintenance` exige base temporária em `127.0.0.1:18432`, com fixtures
+legadas e a nova migration aplicada; não aponta para produção.
+
+Nenhuma migration ou alteração foi aplicada à VPS nesta implementação.
+
 ## Publicação do Almoxarifado em 07/10/2026
 
 Foi publicada na VPS a reestruturação do Almoxarifado, baseada no commit

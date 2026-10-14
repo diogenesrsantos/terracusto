@@ -275,11 +275,27 @@ a credencial atual. Perfis ainda não possuem edição, desativação ou exclus�
 
 - Ordens são numeradas automaticamente e podem ser preventivas ou corretivas.
 - Na abertura são aceitos equipamento, obra, responsável, medidor e solicitação.
-- A interface atual leva a ordem diretamente de aberta para concluída; os
-  estados intermediários existem no banco, mas ainda não têm ação própria.
-- A conclusão registra diagnóstico, serviço, custo externo e data final.
-- A conclusão aceita até cinco peças e baixa o estoque na mesma transação,
-  impedindo quantidade superior ao saldo disponível.
+- Ordens abertas podem ser editadas, excluídas e fechadas na página de detalhes.
+  A edição permite indicar aberta, em execução ou aguardando peça.
+- Peças são adicionadas sem limite fixo, com data, quantidade inteira e preço
+  unitário editável. Almoxarifado sugere o preço atual e baixa imediatamente,
+  validando saldo em transação serializável. Fornecedor exige descrição e nota
+  fiscal, sem movimentar estoque.
+- Remover uma peça ou excluir uma ordem aberta desfaz as baixas vinculadas.
+- Serviços registram data, descrição, funcionário ativo e valor estimado.
+- Fechamento exige data, resultado (problema resolvido ou não) e descrição.
+  Ordens fechadas não podem ser alteradas ou excluídas.
+- Com obra, o fechamento cria um lançamento balanceado do total de peças e
+  serviços (mais eventual custo externo legado), com documento `OS-número` e
+  tipo Reembolso de Manutenção: débito 1.2 — Clientes e crédito
+  3.2.3 — Reembolso de Manutenção. A competência deve estar aberta.
+- Sem obra, fecha sem lançamento contábil. Ordens antigas preservam os dados e
+  não recebem lançamentos retroativos.
+- Relatório institucional imprimível disponível em qualquer situação, com
+  cabeçalho, peças, serviços, resultado e totais.
+- Listagem de 20 ordens por página, com filtros Todas, Abertas, Fechadas e Com
+  pendências. Pendências inclui em execução, aguardando peça e fechadas com
+  problema não resolvido.
 
 ### Pessoas, obras e equipamentos
 

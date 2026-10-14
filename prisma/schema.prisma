@@ -81,6 +81,7 @@ enum FuelMeasurementStatus {
 }
 
 model Person {
+  maintenanceServices MaintenanceService[]
   id            String             @id @default(cuid())
   name          String
   cpf           String?            @unique
@@ -365,6 +366,7 @@ model AccountingEntry {
   supplierLedgerEntry SupplierLedgerEntry?
   fuelMeasurement     FuelMeasurement?
   stockIssue          StockIssue?
+  maintenanceOrder    MaintenanceOrder?
 
   @@index([workId, competence, status])
   @@index([entryTypeId])
@@ -699,6 +701,11 @@ model MaintenanceOrder {
   work         Work?             @relation(fields: [workId], references: [id])
   mechanic     Person?           @relation("Mechanic", fields: [mechanicId], references: [id])
   parts        MaintenancePart[]
+  services     MaintenanceService[]
+  resolved     Boolean?
+  closingNotes String?
+  entryId      String? @unique
+  entry        AccountingEntry? @relation(fields: [entryId], references: [id])
 
   @@index([assetId, status])
 }
@@ -706,11 +713,27 @@ model MaintenanceOrder {
 model MaintenancePart {
   id        String           @id @default(cuid())
   orderId   String
-  productId String
+  productId String?
   quantity  Decimal          @db.Decimal(14, 3)
   unitCost  Decimal          @db.Decimal(14, 4)
   order     MaintenanceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product          @relation(fields: [productId], references: [id])
+  product   Product?         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  date      DateTime         @default(now())
+  description String?
+  invoice   String?
+  source    String           @default("STOCK")
+  operationId String?        @unique
+}
+
+model MaintenanceService {
+  id String @id @default(cuid())
+  orderId String
+  date DateTime
+  description String
+  employeeId String
+  value Decimal @db.Decimal(14, 2)
+  order MaintenanceOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  employee Person @relation(fields: [employeeId], references: [id])
 }
 
 model AuditLog {

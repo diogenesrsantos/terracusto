@@ -151,6 +151,24 @@ créditos e credora por créditos menos débitos; o detalhado mantém o saldo
 acumulado por movimentação. A impressão usa CSS específico para remover filtros,
 menu e ações, preservando o cabeçalho institucional.
 
+## Evolução de manutenção de 14/10/2026
+
+`app/maintenance-actions.ts` centraliza edição, exclusão, peças, serviços e
+fechamento, autorizados por `maintenance.manage`. As mutações usam transações
+serializáveis para impedir baixa acima do saldo e fechamento duplicado.
+`MaintenancePart.operationId` identifica a baixa imediata em `StockMovement`;
+fornecedor é identificado por `source = SUPPLIER`, descrição e nota fiscal.
+`MaintenanceService` vincula funcionário, data e valor estimado à ordem.
+`MaintenanceOrder.entryId` vincula o lançamento único gerado no fechamento;
+`resolved` e `closingNotes` registram o resultado. O Centro de custos protege
+esse lançamento automático contra edição manual.
+
+A barreira `assertOpen` foi extraída para `lib/accounting-period.ts`, preservando
+as regras anteriores e permitindo seu uso no fechamento da manutenção. O schema
+atual possui 39 modelos e 21 migrations. A migration nova preserva peças e
+custos legados e cria a conta 3.2.3 e o tipo Reembolso de Manutenção; não cria
+lançamentos retroativos. Ordens encerradas são imutáveis.
+
 ## Autenticação e autorização
 
 - A autenticação usa e-mail e senha com `bcrypt`, custo 12.

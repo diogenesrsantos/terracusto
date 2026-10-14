@@ -13,6 +13,7 @@ import { businessToday, monthStart } from "@/lib/format";
 import { checkLoginRate, recordLoginFailure, resetLoginRate } from "@/lib/rate-limit";
 import { isThemeName } from "@/lib/themes";
 import { isHelpPage } from "@/lib/help-pages";
+import { assertOpen } from "@/lib/accounting-period";
 
 const text = (form: FormData, key: string) => String(form.get(key) || "").trim();
 const optional = (form: FormData, key: string) => text(form, key) || null;
@@ -409,32 +410,6 @@ export async function deleteEntryType(form: FormData) {
   revalidatePath("/lancamentos");
 }
 
-async function assertOpen(workId: string, date: Date) {
-  const today = businessToday();
-  const currentCompetence = monthStart(today);
-  const competence = monthStart(date);
-  if (date > today) throw new Error("Não é permitido lançar em data futura.");
-
-  const openPeriod = await db.accountingPeriod.findFirst({
-    where: { workId, status: "OPEN" }, orderBy: { competence: "asc" },
-  });
-  if (openPeriod && openPeriod.competence < currentCompetence) {
-    throw new Error("A competência anterior venceu. Feche-a antes de realizar novos lançamentos.");
-  }
-  if (openPeriod && openPeriod.competence.getTime() !== competence.getTime()) {
-    throw new Error("A data deve pertencer à competência vigente da obra.");
-  }
-  if (!openPeriod) {
-    if (competence.getTime() !== currentCompetence.getTime()) {
-      throw new Error("A data deve pertencer ao mês vigente.");
-    }
-    const period = await db.accountingPeriod.findUnique({ where: { workId_competence: { workId, competence } } });
-    if (period?.status === "CLOSED") throw new Error("Esta competência está fechada.");
-    if (!period) await db.accountingPeriod.create({ data: { workId, competence } });
-  }
-  return competence;
-}
-
 export async function saveEntry(form: FormData) {
   const user = await requirePermission("accounting.manage");
   const id = optional(form, "id");
@@ -442,12 +417,13 @@ export async function saveEntry(form: FormData) {
   const date = when(form, "date");
   if (id) {
     const existing = await db.accountingEntry.findUniqueOrThrow({
-      where: { id }, select: { workId: true, date: true, fuelPurchase: { select: { id: true } }, fuelDispense: { select: { id: true } }, supplierLedgerEntry: { select: { id: true } }, fuelMeasurement: { select: { id: true } } },
+      where: { id }, select: { workId: true, date: true, maintenanceOrder: { select: { id: true } }, fuelPurchase: { select: { id: true } }, fuelDispense: { select: { id: true } }, supplierLedgerEntry: { select: { id: true } }, fuelMeasurement: { select: { id: true } } },
     });
     if (existing.fuelPurchase) throw new Error("Compras de combustível não podem ser alteradas pelo Centro de custos.");
     if (existing.fuelDispense) throw new Error("Abastecimentos não podem ser alterados pelo Centro de custos.");
     if (existing.supplierLedgerEntry) throw new Error("Pagamentos de fornecedores não podem ser alterados pelo Centro de custos.");
     if (existing.fuelMeasurement) throw new Error("Medições de combustível não podem ser alteradas pelo Centro de custos.");
+    if (existing.maintenanceOrder) throw new Error("Ordens de serviço não podem ser alteradas pelo Centro de custos.");
     if (!existing.workId) throw new Error("Lançamentos financeiros automáticos não podem ser alterados pelo Centro de custos.");
     await assertOpen(existing.workId, existing.date);
   }
@@ -1282,36 +1258,17 @@ export async function reopenStockIssue(form: FormData) {
 
 export async function createMaintenance(form: FormData) {
   const user = await requirePermission("maintenance.manage");
+  const kind = text(form, "kind"), assetId = text(form, "assetId"), workId = optional(form, "workId"), mechanicId = optional(form, "mechanicId");
+  if (!["PREVENTIVE", "CORRECTIVE"].includes(kind) || !text(form, "complaint")) throw new Error("Informe tipo e solicitação.");
+  if (!await db.asset.count({ where: { id: assetId, active: true } })) throw new Error("Selecione equipamento ativo.");
+  if (workId && !await db.work.count({ where: { id: workId, active: true } })) throw new Error("Selecione obra ativa.");
+  if (mechanicId && !await db.person.count({ where: { id: mechanicId, active: true } })) throw new Error("Selecione responsável ativo.");
+  if (text(form, "meter") && decimal(form, "meter").lt(0)) throw new Error("O medidor não pode ser negativo.");
   const row = await db.maintenanceOrder.create({ data: {
     kind: text(form, "kind") as "PREVENTIVE" | "CORRECTIVE", complaint: text(form, "complaint"),
     meter: text(form, "meter") ? decimal(form, "meter") : null, assetId: text(form, "assetId"),
     workId: optional(form, "workId"), mechanicId: optional(form, "mechanicId"), createdById: user.userId,
   }});
   await audit(user.userId, "CREATE", "MaintenanceOrder", row.id); revalidatePath("/manutencao");
-}
-
-export async function finishMaintenance(form: FormData) {
-  const user = await requirePermission("maintenance.manage"); const id = text(form, "id");
-  const parts = Array.from({ length: 5 }, (_, index) => ({
-    productId: optional(form, `partProductId${index}`),
-    quantity: text(form, `partQuantity${index}`) ? decimal(form, `partQuantity${index}`) : null,
-    unitCost: text(form, `partUnitCost${index}`) ? decimal(form, `partUnitCost${index}`) : new Prisma.Decimal(0),
-  })).filter((part) => part.productId || part.quantity);
-  if (parts.some((part) => !part.productId || !part.quantity || part.quantity.lte(0) || !part.quantity.isInteger())) throw new Error("Informe produtos e quantidades inteiras válidas.");
-  await db.$transaction(async (tx) => {
-    const order = await tx.maintenanceOrder.findUnique({ where: { id }, select: { id: true, status: true, workId: true } });
-    if (!order || order.status === "DONE") throw new Error("Esta ordem já foi concluída.");
-    for (const part of parts) {
-      const rows = await tx.stockMovement.groupBy({ by: ["kind"], where: { productId: part.productId! }, _sum: { quantity: true } });
-      const balance = rows.reduce((sum, row) => sum + (row.kind === "OUT" ? -1 : 1) * Number(row._sum.quantity || 0), 0);
-      if (Number(part.quantity) > balance) throw new Error("Estoque insuficiente para uma das peças.");
-      await tx.stockMovement.create({ data: { date: new Date(), kind: "OUT", quantity: part.quantity!, unitCost: part.unitCost, requester: "Manutenção", history: `OS #${id}`, productId: part.productId!, workId: order.workId, createdById: user.userId } });
-      await tx.maintenancePart.create({ data: { orderId: id, productId: part.productId!, quantity: part.quantity!, unitCost: part.unitCost } });
-    }
-    await tx.maintenanceOrder.update({ where: { id }, data: {
-      status: "DONE", finishedAt: new Date(), diagnosis: optional(form, "diagnosis"), service: optional(form, "service"), externalCost: decimal(form, "externalCost"),
-    } });
-  });
-  await audit(user.userId, "FINISH", "MaintenanceOrder", id); revalidatePath("/manutencao");
-  revalidatePath("/almoxarifado");
+  redirect(`/manutencao/${row.id}`);
 }

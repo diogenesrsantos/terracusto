@@ -256,12 +256,17 @@ autenticados. A permissão `help.manage` controla a rota administrativa `/ajuda`
 - Ordem recebe número inteiro autoincrementável e tipo preventivo ou corretivo.
 - Abertura registra equipamento, reclamação e, opcionalmente, obra, responsável
   e horímetro/odômetro.
-- A interface atual permite concluir diretamente uma ordem aberta, registrando
-  diagnóstico, serviço, custo externo e instante da conclusão.
-- O banco prevê os estados aberta, em andamento, aguardando peça, concluída e
-  cancelada, mas a interface ainda não opera todos esses estados.
-- A conclusão aceita até cinco peças e gera baixa automática no almoxarifado na
-  mesma transação da ordem.
+- Detalhes em `/manutencao/[id]` permitem editar, excluir e fechar ordens abertas.
+  Peças do almoxarifado baixam imediatamente, com preço sugerido editável;
+  peças de fornecedor exigem nota fiscal e não movimentam estoque.
+- Listas de peças e serviços possuem data, quantidade/preço ou funcionário/valor.
+  Remover peças ou excluir a ordem devolve o estoque pelas operações vinculadas.
+- O fechamento registra resultado e gera, quando há obra, lançamento do total
+  no centro de custos com o tipo Reembolso de Manutenção (Clientes × Reembolso
+  de Manutenção). Competências fechadas bloqueiam o fechamento financeiro.
+- Relatório em `/manutencao/[id]/relatorio`, disponível a qualquer momento.
+- Paginação de 20 registros e filtros abertas, fechadas e pendências. Ordens
+  fechadas são imutáveis; registros legados não recebem lançamentos retroativos.
 
 O relatório de centro de custos consulta somente obras ativas e competências que
 possuem lançamentos. O modo resumido soma quantidade, horas e valores por

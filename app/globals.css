@@ -302,6 +302,9 @@ tbody tr:hover { background: #f8faf8; }
   .fuel-cost-report .fuel-grand-total { margin-top: 3mm; padding: 1.5mm; }
   .fuel-cost-report .report-footer { margin-top: 3mm; }
   .report-sheet tr { break-inside: avoid; }
+  .maintenance-report .card { border: 0; box-shadow: none; padding: 2mm 0; }
+  .maintenance-report thead { display: table-header-group; }
+  .maintenance-report h2 { break-after: avoid; }
 }
 @media print {
   .report-header { break-inside: avoid; }
